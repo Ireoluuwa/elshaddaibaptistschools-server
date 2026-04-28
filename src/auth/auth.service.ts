@@ -26,6 +26,7 @@ export class AuthService {
       role: user.role 
     };
     return {
+      message: "Login successful",
       access_token: this.jwtService.sign(payload),
     };
   }
