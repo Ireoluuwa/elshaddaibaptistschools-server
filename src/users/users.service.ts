@@ -10,14 +10,14 @@ export class UsersService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async findOneByUsername(username: string): Promise<User | undefined> {
+  async findOneByUsername(username: string): Promise<User | null> {
     return this.userRepository.findOne({ 
       where: { username },
       select: ['id', 'username', 'password', 'role', 'isActive'] // Explicitly select password for auth
     });
   }
 
-  async findOneById(id: string): Promise<User | undefined> {
+  async findOneById(id: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { id } });
   }
 
