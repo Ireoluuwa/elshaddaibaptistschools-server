@@ -6,7 +6,11 @@ import express from 'express';
 
 const server = express();
 
+let isInitialized = false;
+
 async function bootstrap() {
+  if (isInitialized) return;
+
   const app = await NestFactory.create(AppModule, new ExpressAdapter(server));
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
@@ -17,15 +21,21 @@ async function bootstrap() {
   app.enableCors();
   
   await app.init();
-  
-  // Only call listen if we are not running in a Vercel environment
-  if (!process.env.VERCEL) {
-    const port = process.env.PORT ?? 3000;
-    await app.listen(port);
-    console.log(`Application is running on: http://localhost:${port}/api`);
-  }
+  isInitialized = true;
 }
 
-bootstrap();
+// Local development
+if (!process.env.VERCEL) {
+  bootstrap().then(() => {
+    const port = process.env.PORT ?? 3000;
+    server.listen(port, () => {
+      console.log(`Application is running on: http://localhost:${port}/api`);
+    });
+  });
+}
 
-export default server;
+// Vercel serverless handler
+export default async (req: any, res: any) => {
+  await bootstrap();
+  server(req, res);
+};
