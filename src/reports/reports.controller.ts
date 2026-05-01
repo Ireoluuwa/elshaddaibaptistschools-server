@@ -28,7 +28,7 @@ export class ReportsController {
     return this.reportsService.getDashboardInit(user.sub);
   }
 
-  @Get('student-weekly-init')
+  @Get('student-history')
   @Roles(UserRole.TEACHER)
   @ResponseMessage('Student weekly history retrieved successfully')
   async getStudentWeeklyInit(
