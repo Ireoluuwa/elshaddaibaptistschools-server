@@ -1,5 +1,6 @@
 import { IsString, IsNumber, IsOptional, IsArray, IsEnum, Min, Max } from 'class-validator';
 import { ReportStatus } from '../enums/report-status.enum';
+import { WeeklyScore } from '../types/weekly-score.type';
 
 export class CreateReportDto {
   @IsString()
@@ -13,7 +14,7 @@ export class CreateReportDto {
 
   @IsOptional()
   @IsArray()
-  scores?: any[];
+  scores?: WeeklyScore[];
 
   @IsOptional()
   @IsString()

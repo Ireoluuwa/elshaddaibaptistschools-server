@@ -3,6 +3,7 @@ import { BaseEntity } from '../../common/base.entity';
 import { Student } from '../../profile/entities/models/student.entity';
 import { Term } from '../../academics/entities/term.entity';
 import { ReportStatus } from '../enums/report-status.enum';
+import { WeeklyScore } from '../types/weekly-score.type';
 
 @Entity('weekly_reports')
 @Unique(['student', 'term', 'weekNumber'])
@@ -18,7 +19,7 @@ export class WeeklyReport extends BaseEntity {
   weekNumber: number;
 
   @Column({ type: 'jsonb', default: [] })
-  scores: any[];
+  scores: WeeklyScore[];
 
   @Column({ type: 'text', nullable: true })
   teacherRemark: string;
