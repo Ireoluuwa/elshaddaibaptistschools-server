@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Student } from './entities/models/student.entity';
 import { Teacher } from './entities/models/teacher.entity';
 import { UsersService } from '../users/users.service';
+import { AcademicsService } from '../academics/academics.service';
 import { UpdateStudentProfileDto } from './dto/update-student-profile.dto';
 import { UpdateTeacherProfileDto } from './dto/update-teacher-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
@@ -17,6 +18,7 @@ export class ProfileService {
     @InjectRepository(Teacher)
     private readonly teacherRepository: Repository<Teacher>,
     private readonly usersService: UsersService,
+    private readonly academicsService: AcademicsService,
   ) {}
 
   async getStudentProfile(userId: string) {
@@ -25,7 +27,7 @@ export class ProfileService {
 
     const profile = await this.studentRepository.findOne({
       where: { user: { id: userId } },
-      relations: ['user'],
+      relations: ['user', 'schoolClass', 'department'],
     });
 
     return profile;
@@ -52,7 +54,19 @@ export class ProfileService {
       throw new NotFoundException('Student profile not found');
     }
 
-    Object.assign(profile, updateDto);
+    const { classId, departmentId, ...otherData } = updateDto;
+
+    if (classId) {
+      const schoolClass = await this.academicsService.findClassById(classId);
+      if (schoolClass) profile.schoolClass = schoolClass;
+    }
+
+    if (departmentId) {
+      const department = await this.academicsService.findDepartmentById(departmentId);
+      if (department) profile.department = department;
+    }
+
+    Object.assign(profile, otherData);
     return this.studentRepository.save(profile);
   }
 

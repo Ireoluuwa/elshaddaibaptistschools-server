@@ -1,6 +1,8 @@
-import { Entity, Column, OneToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, OneToOne, JoinColumn, ManyToOne } from 'typeorm';
 import { BaseEntity } from '../../../common/base.entity';
 import { User } from '../../../users/entities/user.entity';
+import { SchoolClass } from '../../../academics/entities/school-class.entity';
+import { Department } from '../../../academics/entities/department.entity';
 
 @Entity('student_profiles')
 export class Student extends BaseEntity {
@@ -9,9 +11,12 @@ export class Student extends BaseEntity {
 
   @Column()
   lastName: string;
-  
-  @Column()
-  currentClass: string;
+
+  @ManyToOne(() => SchoolClass, (schoolClass) => schoolClass.students, { nullable: true })
+  schoolClass: SchoolClass;
+
+  @ManyToOne(() => Department, (department) => department.students, { nullable: true })
+  department: Department;
 
   @Column({ type: 'date' })
   dateOfBirth: string;

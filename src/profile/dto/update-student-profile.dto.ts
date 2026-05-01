@@ -10,6 +10,14 @@ export class UpdateStudentProfileDto {
   lastName?: string;
 
   @IsOptional()
+  @IsString()
+  classId?: string;
+
+  @IsOptional()
+  @IsString()
+  departmentId?: string;
+
+  @IsOptional()
   @IsDateString()
   dateOfBirth?: string;
 
