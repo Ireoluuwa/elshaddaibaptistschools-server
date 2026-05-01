@@ -14,6 +14,10 @@ export class UpdateTeacherProfileDto {
   classId?: string;
 
   @IsOptional()
+  @IsString()
+  departmentId?: string;
+
+  @IsOptional()
   @IsEmail()
   email?: string;
 

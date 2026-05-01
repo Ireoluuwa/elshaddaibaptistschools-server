@@ -57,7 +57,7 @@ export class ProfileService {
 
     const profile = await this.teacherRepository.findOne({
       where: { user: { id: userId } },
-      relations: ['user', 'schoolClass'],
+      relations: ['user', 'schoolClass', 'department'],
     });
 
     if (!profile) return null;
@@ -69,6 +69,7 @@ export class ProfileService {
       firstName: profile.firstName,
       lastName: profile.lastName,
       schoolClass: profile.schoolClass?.name || null,
+      department: profile.department?.name || null,
       address: profile.address,
       email: profile.email,
       phoneNumber: profile.phoneNumber,
