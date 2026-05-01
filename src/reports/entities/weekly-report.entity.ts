@@ -2,6 +2,7 @@ import { Entity, Column, ManyToOne, Unique } from 'typeorm';
 import { BaseEntity } from '../../common/base.entity';
 import { Student } from '../../profile/entities/models/student.entity';
 import { Term } from '../../academics/entities/term.entity';
+import { ReportStatus } from '../enums/report-status.enum';
 
 @Entity('weekly_reports')
 @Unique(['student', 'term', 'weekNumber'])
@@ -28,6 +29,10 @@ export class WeeklyReport extends BaseEntity {
   @Column({ type: 'int', default: 5 })
   attendance: number;
 
-  @Column({ default: 'DRAFT' })
-  status: string;
+  @Column({
+    type: 'enum',
+    enum: ReportStatus,
+    default: ReportStatus.DRAFT,
+  })
+  status: ReportStatus;
 }
