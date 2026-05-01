@@ -3,17 +3,85 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SchoolClass } from './entities/school-class.entity';
 import { Department } from './entities/department.entity';
+import { AcademicYear } from './entities/academic-year.entity';
+import { Term } from './entities/term.entity';
 
 @Injectable()
 export class AcademicsService {
+
   constructor(
     @InjectRepository(SchoolClass)
     private readonly classRepository: Repository<SchoolClass>,
     @InjectRepository(Department)
     private readonly departmentRepository: Repository<Department>,
+    @InjectRepository(AcademicYear)
+    private readonly academicYearRepository: Repository<AcademicYear>,
+    @InjectRepository(Term)
+    private readonly termRepository: Repository<Term>,
   ) {}
 
+  async createAcademicYear(name: string, isCurrent: boolean) {
+    if (isCurrent) {
+      await this.academicYearRepository.update({}, { isCurrent: false });
+    }
+    const academicYear = this.academicYearRepository.create({ name, isCurrent });
+    return this.academicYearRepository.save(academicYear);
+  }
+
+  async createTerm(
+    name: string,
+    startDate: string,
+    endDate: string,
+    academicYearId: string,
+    isCurrent: boolean,
+  ) {
+    if (isCurrent) {
+      await this.termRepository.update({}, { isCurrent: false });
+    }
+    const term = this.termRepository.create({
+      name,
+      startDate,
+      endDate,
+      isCurrent,
+      academicYear: { id: academicYearId } as any,
+    });
+    return this.termRepository.save(term);
+  }
+
+  async getCurrentTerm() {
+    const term = await this.termRepository.findOne({
+      where: { isCurrent: true },
+      relations: ['academicYear'],
+    });
+
+    if (!term) return null;
+
+    // Calculate current week
+    const start = new Date(term.startDate);
+    const today = new Date();
+    const diffInMs = today.getTime() - start.getTime();
+    const weekNumber = Math.ceil(diffInMs / (7 * 24 * 60 * 60 * 1000));
+
+    return {
+      ...term,
+      currentWeek: weekNumber > 0 ? weekNumber : 1,
+    };
+  }
+
+  async getAllPeriods() {
+    return this.academicYearRepository.find({
+      relations: ['terms'],
+      order: {
+        name: 'DESC',
+        terms: {
+          name: 'ASC',
+        },
+      },
+    });
+  }
+
   async createClass(name: string, isSenior: boolean) {
+
     const existing = await this.classRepository.findOne({ where: { name } });
     if (existing) throw new ConflictException('Class already exists');
 

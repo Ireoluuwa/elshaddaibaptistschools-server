@@ -36,4 +36,43 @@ export class AcademicsController {
   async getAllDepartments() {
     return this.academicsService.getAllDepartments();
   }
+
+  @Post('academic-years')
+  @ResponseMessage('Academic year created successfully')
+  async createAcademicYear(@Body() body: { name: string; isCurrent: boolean }) {
+    return this.academicsService.createAcademicYear(body.name, body.isCurrent);
+  }
+
+  @Post('terms')
+  @ResponseMessage('Term created successfully')
+  async createTerm(
+    @Body()
+    body: {
+      name: string;
+      startDate: string;
+      endDate: string;
+      academicYearId: string;
+      isCurrent: boolean;
+    },
+  ) {
+    return this.academicsService.createTerm(
+      body.name,
+      body.startDate,
+      body.endDate,
+      body.academicYearId,
+      body.isCurrent,
+    );
+  }
+
+  @Get('active-period')
+  @ResponseMessage('Active period retrieved successfully')
+  async getActivePeriod() {
+    return this.academicsService.getCurrentTerm();
+  }
+
+  @Get('all-periods')
+  @ResponseMessage('All academic periods retrieved successfully')
+  async getAllPeriods() {
+    return this.academicsService.getAllPeriods();
+  }
 }

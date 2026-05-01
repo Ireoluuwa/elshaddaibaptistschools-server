@@ -54,19 +54,7 @@ export class ProfileService {
       throw new NotFoundException('Student profile not found');
     }
 
-    const { classId, departmentId, ...otherData } = updateDto;
-
-    if (classId) {
-      const schoolClass = await this.academicsService.findClassById(classId);
-      if (schoolClass) profile.schoolClass = schoolClass;
-    }
-
-    if (departmentId) {
-      const department = await this.academicsService.findDepartmentById(departmentId);
-      if (department) profile.department = department;
-    }
-
-    Object.assign(profile, otherData);
+    Object.assign(profile, updateDto);
     return this.studentRepository.save(profile);
   }
 
