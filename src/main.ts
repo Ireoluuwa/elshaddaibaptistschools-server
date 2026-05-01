@@ -1,6 +1,7 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
 
@@ -18,6 +19,7 @@ async function bootstrap() {
     transform: true,
   }));
   app.setGlobalPrefix('api');
+  app.useGlobalInterceptors(new TransformInterceptor(new Reflector()));
   app.enableCors();
   
   await app.init();

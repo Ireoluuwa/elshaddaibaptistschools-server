@@ -8,6 +8,7 @@ import { User } from '../common/decorators/user.decorator';
 import { UpdateStudentProfileDto } from './dto/update-student-profile.dto';
 import { UpdateTeacherProfileDto } from './dto/update-teacher-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { ResponseMessage } from '../common/decorators/response-message.decorator';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 
 @Controller('profile')
@@ -17,12 +18,14 @@ export class ProfileController {
 
   @Get('student')
   @Roles(UserRole.STUDENT)
+  @ResponseMessage('Student profile retrieved successfully')
   getStudentProfile(@User() user: JwtPayload) {
     return this.profileService.getStudentProfile(user.sub);
   }
 
   @Patch('student')
   @Roles(UserRole.STUDENT)
+  @ResponseMessage('Student profile updated successfully')
   updateStudentProfile(
     @User() user: JwtPayload,
     @Body() updateDto: UpdateStudentProfileDto,
@@ -32,12 +35,14 @@ export class ProfileController {
 
   @Get('teacher')
   @Roles(UserRole.TEACHER)
+  @ResponseMessage('Teacher profile retrieved successfully')
   getTeacherProfile(@User() user: JwtPayload) {
     return this.profileService.getTeacherProfile(user.sub);
   }
 
   @Patch('teacher')
   @Roles(UserRole.TEACHER)
+  @ResponseMessage('Teacher profile updated successfully')
   updateTeacherProfile(
     @User() user: JwtPayload,
     @Body() updateDto: UpdateTeacherProfileDto,
@@ -46,6 +51,7 @@ export class ProfileController {
   }
 
   @Post('change-password')
+  @ResponseMessage('Password updated successfully')
   updatePassword(
     @User() user: JwtPayload,
     @Body() changePasswordDto: ChangePasswordDto,
