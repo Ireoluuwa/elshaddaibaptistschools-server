@@ -30,7 +30,26 @@ export class ProfileService {
       relations: ['user', 'schoolClass', 'department'],
     });
 
-    return profile;
+    if (!profile) return null;
+
+    return {
+      id: profile.id,
+      studentId: profile.studentId,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      schoolClass: profile.schoolClass?.name || null,
+      department: profile.department?.name || null,
+      dateOfBirth: profile.dateOfBirth,
+      yearJoined: profile.yearJoined,
+      homeAddress: profile.homeAddress,
+      guardianName: profile.guardianName,
+      guardianPhone: profile.guardianPhone,
+      guardianEmail: profile.guardianEmail,
+      user: {
+        username: profile.user.username,
+        role: profile.user.role,
+      },
+    };
   }
 
   async getTeacherProfile(userId: string) {
@@ -42,7 +61,18 @@ export class ProfileService {
       relations: ['user', 'schoolClass'],
     });
 
-    return profile;
+    if (!profile) return null;
+
+    return {
+      id: profile.id,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+      schoolClass: profile.schoolClass?.name || null,
+      user: {
+        username: profile.user.username,
+        role: profile.user.role,
+      },
+    };
   }
 
   async updateStudentProfile(userId: string, updateDto: UpdateStudentProfileDto) {
