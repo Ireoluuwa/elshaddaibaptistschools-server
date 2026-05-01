@@ -69,7 +69,7 @@ export class AcademicsService {
   }
 
   async getAllPeriods() {
-    return this.academicYearRepository.find({
+    const years = await this.academicYearRepository.find({
       relations: ['terms'],
       order: {
         name: 'DESC',
@@ -78,6 +78,24 @@ export class AcademicsService {
         },
       },
     });
+
+    const today = new Date();
+
+    return years.map((year) => ({
+      ...year,
+      terms: year.terms.map((term) => {
+        if (!term.isCurrent) return term;
+
+        const start = new Date(term.startDate);
+        const diffInMs = today.getTime() - start.getTime();
+        const weekNumber = Math.ceil(diffInMs / (7 * 24 * 60 * 60 * 1000));
+
+        return {
+          ...term,
+          currentWeek: weekNumber > 0 ? weekNumber : 1,
+        };
+      }),
+    }));
   }
 
   async createClass(name: string, isSenior: boolean) {
@@ -105,11 +123,4 @@ export class AcademicsService {
     return this.departmentRepository.find({ order: { name: 'ASC' } });
   }
 
-  async findClassById(id: string) {
-    return this.classRepository.findOne({ where: { id } });
-  }
-
-  async findDepartmentById(id: string) {
-    return this.departmentRepository.findOne({ where: { id } });
-  }
 }
