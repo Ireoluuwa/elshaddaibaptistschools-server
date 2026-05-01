@@ -64,13 +64,12 @@ export class ProfileService {
 
     return {
       id: profile.id,
+      username: profile.user.username,
+      role: profile.user.role,
       firstName: profile.firstName,
       lastName: profile.lastName,
       schoolClass: profile.schoolClass?.name || null,
-      user: {
-        username: profile.user.username,
-        role: profile.user.role,
-      },
+      
     };
   }
 
