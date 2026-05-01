@@ -39,7 +39,7 @@ export class ProfileService {
 
     const profile = await this.teacherRepository.findOne({
       where: { user: { id: userId } },
-      relations: ['user'],
+      relations: ['user', 'schoolClass'],
     });
 
     return profile;
@@ -79,7 +79,14 @@ export class ProfileService {
       throw new NotFoundException('Teacher profile not found');
     }
 
-    Object.assign(profile, updateDto);
+    const { classId, ...otherData } = updateDto;
+
+    if (classId) {
+      const schoolClass = await this.academicsService.findClassById(classId);
+      if (schoolClass) profile.schoolClass = schoolClass;
+    }
+
+    Object.assign(profile, otherData);
     return this.teacherRepository.save(profile);
   }
 

@@ -1,6 +1,7 @@
-import { Entity, Column, OneToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, OneToOne, JoinColumn, ManyToOne } from 'typeorm';
 import { BaseEntity } from '../../../common/base.entity';
 import { User } from '../../../users/entities/user.entity';
+import { SchoolClass } from '../../../academics/entities/school-class.entity';
 
 @Entity('teacher_profiles')
 export class Teacher extends BaseEntity {
@@ -10,8 +11,8 @@ export class Teacher extends BaseEntity {
   @Column({ nullable: true })
   lastName: string;
 
-  @Column({ nullable: true })
-  currentClass: string;
+  @ManyToOne(() => SchoolClass, { nullable: true })
+  schoolClass: SchoolClass;
 
   @Column({ nullable: true })
   email: string;

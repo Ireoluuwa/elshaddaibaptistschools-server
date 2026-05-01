@@ -10,6 +10,10 @@ export class UpdateTeacherProfileDto {
   lastName?: string;
 
   @IsOptional()
+  @IsString()
+  classId?: string;
+
+  @IsOptional()
   @IsEmail()
   email?: string;
 
