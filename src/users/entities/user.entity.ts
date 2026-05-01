@@ -1,6 +1,7 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, OneToOne } from 'typeorm';
 import { BaseEntity } from '../../common/base.entity';
 import { UserRole } from '../../common/enums/user-role.enum';
+import { Student } from '../../profile/entities/models/student.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -19,4 +20,7 @@ export class User extends BaseEntity {
 
   @Column({ default: true })
   isActive: boolean;
+
+  @OneToOne(() => Student, (student) => student.user)
+  studentProfile: Student;
 }
