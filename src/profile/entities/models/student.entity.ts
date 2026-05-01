@@ -4,7 +4,6 @@ import { User } from '../../../users/entities/user.entity';
 
 @Entity('student_profiles')
 export class Student extends BaseEntity {
-
   @Column()
   firstName: string;
 

@@ -4,8 +4,14 @@ import { User } from '../../../users/entities/user.entity';
 
 @Entity('teacher_profiles')
 export class Teacher extends BaseEntity {
-  @Column({ unique: true, nullable: true })
-  staffId: string;
+  @Column({ nullable: true })
+  firstName: string;
+
+  @Column({ nullable: true })
+  lastName: string;
+
+  @Column({ nullable: true })
+  currentClass: string;
 
   @Column({ nullable: true })
   email: string;

@@ -2,6 +2,14 @@ import { IsString, IsOptional, IsEmail, IsDateString, IsNumber } from 'class-val
 
 export class UpdateStudentProfileDto {
   @IsOptional()
+  @IsString()
+  firstName?: string;
+
+  @IsOptional()
+  @IsString()
+  lastName?: string;
+
+  @IsOptional()
   @IsDateString()
   dateOfBirth?: string;
 
