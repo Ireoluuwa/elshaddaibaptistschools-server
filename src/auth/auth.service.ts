@@ -26,7 +26,6 @@ export class AuthService {
       role: user.role 
     };
     return {
-      message: "Login successful",
       user: {
         username: user.username,
         role: user.role,
