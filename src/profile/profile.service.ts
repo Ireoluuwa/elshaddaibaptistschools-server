@@ -98,14 +98,7 @@ export class ProfileService {
       throw new NotFoundException('Teacher profile not found');
     }
 
-    const { classId, ...otherData } = updateDto;
-
-    if (classId) {
-      const schoolClass = await this.academicsService.findClassById(classId);
-      if (schoolClass) profile.schoolClass = schoolClass;
-    }
-
-    Object.assign(profile, otherData);
+    Object.assign(profile, updateDto);
     return this.teacherRepository.save(profile);
   }
 
