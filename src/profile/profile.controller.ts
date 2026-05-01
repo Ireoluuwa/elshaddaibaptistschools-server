@@ -6,6 +6,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
 import { User } from '../common/decorators/user.decorator';
 import { UpdateStudentProfileDto } from './dto/update-student-profile.dto';
+import { UpdateTeacherProfileDto } from './dto/update-teacher-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('profile')
@@ -15,17 +16,32 @@ export class ProfileController {
 
   @Get('student')
   @Roles(UserRole.STUDENT)
-  getProfile(@User() user: any) {
-    return this.profileService.getProfile(user.sub);
+  getStudentProfile(@User() user: any) {
+    return this.profileService.getStudentProfile(user.sub);
   }
 
   @Patch('student')
   @Roles(UserRole.STUDENT)
-  updateProfile(
+  updateStudentProfile(
     @User() user: any,
     @Body() updateDto: UpdateStudentProfileDto,
   ) {
-    return this.profileService.updateProfile(user.sub, updateDto);
+    return this.profileService.updateStudentProfile(user.sub, updateDto);
+  }
+
+  @Get('teacher')
+  @Roles(UserRole.TEACHER)
+  getTeacherProfile(@User() user: any) {
+    return this.profileService.getTeacherProfile(user.sub);
+  }
+
+  @Patch('teacher')
+  @Roles(UserRole.TEACHER)
+  updateTeacherProfile(
+    @User() user: any,
+    @Body() updateDto: UpdateTeacherProfileDto,
+  ) {
+    return this.profileService.updateTeacherProfile(user.sub, updateDto);
   }
 
   @Patch('change-password')

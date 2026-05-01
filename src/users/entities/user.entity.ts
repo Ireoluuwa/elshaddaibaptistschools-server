@@ -2,6 +2,7 @@ import { Entity, Column, OneToOne } from 'typeorm';
 import { BaseEntity } from '../../common/base.entity';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { Student } from '../../profile/entities/models/student.entity';
+import { Teacher } from '../../profile/entities/models/teacher.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -23,4 +24,7 @@ export class User extends BaseEntity {
 
   @OneToOne(() => Student, (student) => student.user)
   studentProfile: Student;
+
+  @OneToOne(() => Teacher, (teacher) => teacher.user)
+  teacherProfile: Teacher;
 }
