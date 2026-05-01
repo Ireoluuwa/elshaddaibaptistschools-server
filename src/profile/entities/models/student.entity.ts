@@ -4,9 +4,13 @@ import { User } from '../../../users/entities/user.entity';
 
 @Entity('student_profiles')
 export class Student extends BaseEntity {
-  @Column({ unique: true })
-  admissionNumber: string;
 
+  @Column()
+  firstName: string;
+
+  @Column()
+  lastName: string;
+  
   @Column()
   currentClass: string;
 
