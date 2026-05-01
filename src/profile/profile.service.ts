@@ -33,7 +33,10 @@ export class ProfileService {
     if (!profile) return null;
 
     return {
+
       id: profile.id,
+      studentId: profile.user.username,
+      role: profile.user.role,
       firstName: profile.firstName,
       lastName: profile.lastName,
       schoolClass: profile.schoolClass?.name || null,
@@ -44,10 +47,7 @@ export class ProfileService {
       guardianName: profile.guardianName,
       guardianPhone: profile.guardianPhone,
       guardianEmail: profile.guardianEmail,
-      user: {
-        username: profile.user.username,
-        role: profile.user.role,
-      },
+   
     };
   }
 
