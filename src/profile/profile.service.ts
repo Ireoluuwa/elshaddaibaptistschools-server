@@ -34,7 +34,6 @@ export class ProfileService {
 
     return {
       id: profile.id,
-      studentId: profile.studentId,
       firstName: profile.firstName,
       lastName: profile.lastName,
       schoolClass: profile.schoolClass?.name || null,

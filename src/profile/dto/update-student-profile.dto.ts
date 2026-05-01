@@ -3,10 +3,6 @@ import { IsString, IsOptional, IsEmail, IsDateString, IsNumber } from 'class-val
 export class UpdateStudentProfileDto {
   @IsOptional()
   @IsString()
-  studentId?: string;
-
-  @IsOptional()
-  @IsString()
   firstName?: string;
 
   @IsOptional()
