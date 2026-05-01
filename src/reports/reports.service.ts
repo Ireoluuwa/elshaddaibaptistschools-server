@@ -5,6 +5,7 @@ import { WeeklyReport } from './entities/weekly-report.entity';
 import { Student } from '../profile/entities/models/student.entity';
 import { Teacher } from '../profile/entities/models/teacher.entity';
 import { AcademicsService } from '../academics/academics.service';
+import { CreateReportDto } from './dto/create-report.dto';
 
 @Injectable()
 export class ReportsService {
@@ -17,6 +18,41 @@ export class ReportsService {
     private readonly teacherRepository: Repository<Teacher>,
     private readonly academicsService: AcademicsService,
   ) {}
+
+  async submitReport(dto: CreateReportDto) {
+    const { studentId, termId, weekNumber, ...reportData } = dto;
+
+    // Find the term and its academic year
+    const term = await this.academicsService.findTermById(termId);
+
+    // Check if report already exists for this student/term/week
+    let report: WeeklyReport;
+    const existingReport = await this.reportRepository.findOne({
+      where: {
+        student: { id: studentId },
+        term: { id: termId },
+        weekNumber,
+      },
+    });
+
+    if (existingReport) {
+      // Update existing
+      report = existingReport;
+      Object.assign(report, reportData);
+    } else {
+      // Create new
+      const student = await this.studentRepository.findOne({ where: { id: studentId } });
+
+      report = this.reportRepository.create({
+        student: student || undefined,
+        term: term || undefined,
+        weekNumber,
+        ...reportData,
+      });
+    }
+
+    return this.reportRepository.save(report);
+  }
 
   async getDashboardInit(userId: string) {
   
@@ -73,13 +109,13 @@ export class ReportsService {
     const activeTerm = await this.academicsService.getCurrentTerm();
     const currentWeek = activeTerm?.id === termId ? activeTerm.currentWeek : 12;
 
-    // 3. Get all reports for this student in this term
+    // Get all reports for this student in this term
     const reports = await this.reportRepository.find({
       where: { student: { id: studentId }, term: { id: termId } },
       order: { weekNumber: 'ASC' },
     });
 
-    // 4. Generate timeline
+    // Generate timeline
     const timeline: any[] = [];
     for (let i = 1; i <= currentWeek; i++) {
       const report = reports.find((r) => r.weekNumber === i);
@@ -90,7 +126,7 @@ export class ReportsService {
       });
     }
 
-    // 5. Get data for the current week report if it exists
+    // Get data for the current week report if it exists
     const activeReport = reports.find((r) => r.weekNumber === currentWeek);
 
     return {

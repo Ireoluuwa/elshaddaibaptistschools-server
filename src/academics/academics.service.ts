@@ -123,4 +123,18 @@ export class AcademicsService {
     return this.departmentRepository.find({ order: { name: 'ASC' } });
   }
 
+  async findTermById(id: string) {
+    return this.termRepository.findOne({
+      where: { id },
+      relations: ['academicYear'],
+    });
+  }
+
+  async findClassById(id: string) {
+    return this.classRepository.findOne({ where: { id } });
+  }
+
+  async findDepartmentById(id: string) {
+    return this.departmentRepository.findOne({ where: { id } });
+  }
 }

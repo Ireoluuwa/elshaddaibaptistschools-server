@@ -1,5 +1,6 @@
-import { Controller, Get, Query, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Param, UseGuards } from '@nestjs/common';
 import { ReportsService } from './reports.service';
+import { CreateReportDto } from './dto/create-report.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -12,6 +13,13 @@ import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
+
+  @Post()
+  @Roles(UserRole.TEACHER)
+  @ResponseMessage('Report submitted successfully')
+  async submitReport(@Body() dto: CreateReportDto) {
+    return this.reportsService.submitReport(dto);
+  }
 
   @Get('dashboard-init')
   @Roles(UserRole.TEACHER)
