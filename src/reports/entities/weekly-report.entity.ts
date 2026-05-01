@@ -1,7 +1,6 @@
 import { Entity, Column, ManyToOne, Unique } from 'typeorm';
 import { BaseEntity } from '../../common/base.entity';
 import { Student } from '../../profile/entities/models/student.entity';
-import { AcademicYear } from '../../academics/entities/academic-year.entity';
 import { Term } from '../../academics/entities/term.entity';
 
 @Entity('weekly_reports')
@@ -10,8 +9,6 @@ export class WeeklyReport extends BaseEntity {
   @ManyToOne(() => Student)
   student: Student;
 
-  @ManyToOne(() => AcademicYear)
-  session: AcademicYear;
 
   @ManyToOne(() => Term)
   term: Term;
