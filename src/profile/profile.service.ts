@@ -69,7 +69,9 @@ export class ProfileService {
       firstName: profile.firstName,
       lastName: profile.lastName,
       schoolClass: profile.schoolClass?.name || null,
-      
+      address: profile.address,
+      email: profile.email,
+      phoneNumber: profile.phoneNumber,
     };
   }
 
