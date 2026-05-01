@@ -38,6 +38,16 @@ export class ReportsController {
     return this.reportsService.getStudentWeeklyInit(studentId, termId);
   }
 
+  @Get('student-dashboard')
+  @Roles(UserRole.STUDENT)
+  @ResponseMessage('Student dashboard initialized successfully')
+  async getStudentDashboard(
+    @User() user: JwtPayload,
+    @Query('termId') termId?: string,
+  ) {
+    return this.reportsService.getStudentDashboard(user.sub, termId);
+  }
+
   @Get(':id')
   @Roles(UserRole.TEACHER, UserRole.STUDENT)
   @ResponseMessage('Report retrieved successfully')

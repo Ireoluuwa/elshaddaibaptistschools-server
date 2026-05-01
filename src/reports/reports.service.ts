@@ -6,6 +6,7 @@ import { Student } from '../profile/entities/models/student.entity';
 import { Teacher } from '../profile/entities/models/teacher.entity';
 import { AcademicsService } from '../academics/academics.service';
 import { CreateReportDto } from './dto/create-report.dto';
+import { ReportStatus } from './enums/report-status.enum';
 
 @Injectable()
 export class ReportsService {
@@ -147,5 +148,47 @@ export class ReportsService {
     });
     if (!report) throw new NotFoundException('Report not found');
     return report;
+  }
+
+  async getStudentDashboard(userId: string, termId?: string) {
+    const student = await this.studentRepository.findOne({
+      where: { user: { id: userId } },
+    });
+    if (!student) throw new NotFoundException('Student not found');
+    const active = await this.academicsService.getCurrentTerm();
+    const periods = await this.academicsService.getAllPeriods();
+
+    const targetTermId = termId || active?.id;
+    if (!targetTermId) return { periods, active, timeline: [] };
+
+    const reports = await this.reportRepository.find({
+      where: {
+        student: { id: student.id },
+        term: { id: targetTermId },
+        status: ReportStatus.PUBLISHED,
+      },
+      order: { weekNumber: 'ASC' },
+    });
+
+    const reportMap = reports.reduce((acc, r) => {
+      acc[r.weekNumber] = r.id;
+      return acc;
+    }, {} as Record<number, string>);
+
+    const timeline: any[] = [];
+    for (let i = 1; i <= 12; i++) {
+      timeline.push({
+        week: i,
+        reportId: reportMap[i] || null,
+        isAvailable: !!reportMap[i],
+      });
+    }
+
+    return {
+      periods,
+      activeTermId: active?.id || null,
+      selectedTermId: targetTermId,
+      timeline,
+    };
   }
 }
