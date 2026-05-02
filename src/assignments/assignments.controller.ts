@@ -1,6 +1,6 @@
 import { Controller, Get, Delete, Param, UseGuards } from '@nestjs/common';
 import { AssignmentsService } from './assignments.service';
-import { Paginate, PaginateQuery, Paginated } from 'nestjs-paginate';
+import { Paginate, type PaginateQuery, type Paginated } from 'nestjs-paginate';
 import { Assignment } from './entities/assignment.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
