@@ -8,6 +8,7 @@ import { UsersModule } from './users/users.module';
 import { ProfileModule } from './profile/profile.module';
 import { AcademicsModule } from './academics/academics.module';
 import { ReportsModule } from './reports/reports.module';
+import { AssignmentsModule } from './assignments/assignments.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ReportsModule } from './reports/reports.module';
     ProfileModule,
     AcademicsModule,
     ReportsModule,
+    AssignmentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
