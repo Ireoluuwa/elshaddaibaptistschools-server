@@ -1,11 +1,16 @@
-import { Controller, Post, Body, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Body, UnauthorizedException, Get, UseGuards, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { ResponseMessage } from '../common/decorators/response-message.decorator';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { UsersService } from '../users/users.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+  ) {}
 
   @Post('login')
   @ResponseMessage('Login successful')
@@ -20,5 +25,18 @@ export class AuthController {
     }
 
     return this.authService.login(user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('profile')
+  @ResponseMessage('Profile fetched successfully')
+  async getProfile(@Request() req) {
+    const user = await this.usersService.findOneById(req.user.sub);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+    
+    const { password, ...result } = user;
+    return result;
   }
 }
