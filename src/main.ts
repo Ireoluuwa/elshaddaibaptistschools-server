@@ -20,9 +20,23 @@ async function bootstrap() {
   }));
   app.setGlobalPrefix('api');
   app.useGlobalInterceptors(new TransformInterceptor(new Reflector()));
+  const allowedOrigins = [
+    process.env.LOCAL_FRONTEND_URL,
+    process.env.FRONTEND_URL,
+  ].filter(Boolean) as string[];
+
+  // Automatically add www version for production domains
+  const expandedOrigins = [...allowedOrigins];
+  allowedOrigins.forEach((origin) => {
+    if (origin.includes('https://') && !origin.includes('www.')) {
+      expandedOrigins.push(origin.replace('https://', 'https://www.'));
+    }
+  });
+
   app.enableCors({
-    origin: ([process.env.LOCAL_FRONTEND_URL, process.env.FRONTEND_URL].filter(Boolean) as string[])
-      .map((url) => url.replace(/\/$/, '')),
+    origin: Array.from(new Set(expandedOrigins)).map((url) =>
+      url.replace(/\/$/, ''),
+    ),
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
