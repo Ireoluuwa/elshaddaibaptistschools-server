@@ -55,8 +55,13 @@ export class AuthController {
     const schoolClass = deptName ? `${className} (${deptName})`.trim() : className;
 
     return {
-      ...result,
-      schoolClass: schoolClass || null,
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      firstName: user.studentProfile?.firstName || user.teacherProfile?.firstName || '',
+      class: className || null,
+      department: deptName || null,
+      schoolClass: schoolClass || null, // Concatenated: e.g. "SS1 (Science)"
     };
   }
 }
