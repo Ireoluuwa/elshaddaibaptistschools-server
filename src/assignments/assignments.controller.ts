@@ -1,7 +1,8 @@
-import { Controller, Get, Delete, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { AssignmentsService } from './assignments.service';
 import { Paginate, type PaginateQuery, type Paginated } from 'nestjs-paginate';
 import { Assignment } from './entities/assignment.entity';
+import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -15,6 +16,13 @@ import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 export class AssignmentsController {
   constructor(private readonly assignmentsService: AssignmentsService) {}
 
+  @Post()
+  @Roles(UserRole.TEACHER)
+  @ResponseMessage('Assignment created successfully')
+  async create(@Body() dto: CreateAssignmentDto, @User() user: JwtPayload) {
+    return this.assignmentsService.create(dto, user.sub);
+  }
+
   @Get()
   @ResponseMessage('Assignments retrieved successfully')
   async findAll(@Paginate() query: PaginateQuery): Promise<Paginated<Assignment>> {
@@ -27,13 +35,21 @@ export class AssignmentsController {
     return this.assignmentsService.findOne(id);
   }
 
+  @Patch(':id')
+  @Roles(UserRole.TEACHER)
+  @ResponseMessage('Assignment updated successfully')
+  async update(
+    @Param('id') id: string,
+    @Body() dto: Partial<CreateAssignmentDto>,
+    @User() user: JwtPayload,
+  ) {
+    return this.assignmentsService.update(id, dto, user.sub);
+  }
+
   @Delete(':id')
   @Roles(UserRole.TEACHER)
   @ResponseMessage('Assignment deleted successfully')
   async remove(@Param('id') id: string, @User() user: JwtPayload) {
-    // Note: We need to resolve the teacher entity ID from the user ID in a real scenario
-    // For now, I'll assume we can handle the ownership check in the service
-    // or through a helper that finds the teacher profile.
     return this.assignmentsService.remove(id, user.sub); 
   }
 }
