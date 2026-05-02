@@ -34,9 +34,16 @@ async function bootstrap() {
   });
 
   app.enableCors({
-    origin: Array.from(new Set(expandedOrigins)).map((url) =>
-      url.replace(/\/$/, ''),
-    ),
+    origin: (origin, callback) => {
+      const isAllowed = !origin || expandedOrigins.some(
+        (o) => o.replace(/\/$/, '') === origin.replace(/\/$/, ''),
+      );
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
