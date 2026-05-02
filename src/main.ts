@@ -21,7 +21,8 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
   app.useGlobalInterceptors(new TransformInterceptor(new Reflector()));
   app.enableCors({
-    origin: [process.env.LOCAL_FRONTEND_URL, process.env.FRONTEND_URL].filter(Boolean),
+    origin: ([process.env.LOCAL_FRONTEND_URL, process.env.FRONTEND_URL].filter(Boolean) as string[])
+      .map((url) => url.replace(/\/$/, '')),
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
