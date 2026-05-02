@@ -23,7 +23,15 @@ export class AssignmentsController {
     return this.assignmentsService.create(dto, user.sub);
   }
 
+  @Get('student')
+  @Roles(UserRole.STUDENT)
+  @ResponseMessage('Student assignments retrieved successfully')
+  async getStudentAssignments(@Paginate() query: PaginateQuery, @User() user: JwtPayload): Promise<Paginated<Assignment>> {
+    return this.assignmentsService.findAllForStudent(query, user.sub);
+  }
+
   @Get()
+  @Roles(UserRole.TEACHER)
   @ResponseMessage('Assignments retrieved successfully')
   async findAll(@Paginate() query: PaginateQuery): Promise<Paginated<Assignment>> {
     return this.assignmentsService.findAll(query);

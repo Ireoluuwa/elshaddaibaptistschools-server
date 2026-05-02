@@ -6,6 +6,7 @@ import { Assignment } from './entities/assignment.entity';
 import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { Teacher } from '../profile/entities/models/teacher.entity';
 import { SchoolClass } from '../academics/entities/school-class.entity';
+import { Student } from '../profile/entities/models/student.entity';
 
 @Injectable()
 export class AssignmentsService {
@@ -16,6 +17,8 @@ export class AssignmentsService {
     private readonly teacherRepository: Repository<Teacher>,
     @InjectRepository(SchoolClass)
     private readonly classRepository: Repository<SchoolClass>,
+    @InjectRepository(Student)
+    private readonly studentRepository: Repository<Student>,
   ) {}
 
   async create(dto: CreateAssignmentDto, userId: string) {
@@ -68,6 +71,24 @@ export class AssignmentsService {
 
   async findAll(query: PaginateQuery): Promise<Paginated<Assignment>> {
     return paginate(query, this.assignmentRepository, AssignmentsService.paginateConfig);
+  }
+
+  async findAllForStudent(query: PaginateQuery, userId: string): Promise<Paginated<Assignment>> {
+    const student = await this.studentRepository.findOne({
+      where: { user: { id: userId } },
+      relations: ['schoolClass'],
+    });
+
+    if (!student || !student.schoolClass) {
+      throw new NotFoundException('Student or assigned class not found');
+    }
+
+    const queryBuilder = this.assignmentRepository.createQueryBuilder('assignment')
+      .leftJoinAndSelect('assignment.teacher', 'teacher')
+      .leftJoinAndSelect('assignment.schoolClass', 'schoolClass')
+      .where('schoolClass.id = :classId', { classId: student.schoolClass.id });
+
+    return paginate(query, queryBuilder, AssignmentsService.paginateConfig);
   }
 
   async findOne(id: string) {
