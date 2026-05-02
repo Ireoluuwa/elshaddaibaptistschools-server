@@ -1,15 +1,52 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { paginate, Paginated, PaginateConfig, PaginateQuery } from 'nestjs-paginate';
-import { Assignment } from './entities/assignment.entity';
+import { CreateAssignmentDto } from './dto/create-assignment.dto';
+import { Teacher } from '../profile/entities/models/teacher.entity';
+import { SchoolClass } from '../academics/entities/school-class.entity';
 
 @Injectable()
 export class AssignmentsService {
   constructor(
     @InjectRepository(Assignment)
     private readonly assignmentRepository: Repository<Assignment>,
+    @InjectRepository(Teacher)
+    private readonly teacherRepository: Repository<Teacher>,
+    @InjectRepository(SchoolClass)
+    private readonly classRepository: Repository<SchoolClass>,
   ) {}
+
+  async create(dto: CreateAssignmentDto, userId: string) {
+    const teacher = await this.teacherRepository.findOne({ where: { user: { id: userId } } });
+    if (!teacher) throw new NotFoundException('Teacher profile not found');
+
+    const schoolClass = await this.classRepository.findOne({ where: { id: dto.classId } });
+    if (!schoolClass) throw new NotFoundException('Class not found');
+
+    const assignment = this.assignmentRepository.create({
+      ...dto,
+      teacher,
+      schoolClass,
+    });
+
+    return this.assignmentRepository.save(assignment);
+  }
+
+  async update(id: string, dto: Partial<CreateAssignmentDto>, userId: string) {
+    const assignment = await this.findOne(id);
+    
+    // Ownership check
+    const teacher = await this.teacherRepository.findOne({ where: { user: { id: userId } } });
+    if (!teacher || assignment.teacher.id !== teacher.id) {
+      throw new ForbiddenException('You can only update your own assignments');
+    }
+
+    if (dto.classId) {
+      const schoolClass = await this.classRepository.findOne({ where: { id: dto.classId } });
+      if (!schoolClass) throw new NotFoundException('Class not found');
+      assignment.schoolClass = schoolClass;
+    }
+
+    Object.assign(assignment, dto);
+    return this.assignmentRepository.save(assignment);
+  }
 
   public static paginateConfig: PaginateConfig<Assignment> = {
     sortableColumns: ['id', 'title', 'dueDate', 'startDate'],
