@@ -79,11 +79,12 @@ export class AssignmentsService {
     return assignment;
   }
 
-  async remove(id: string, teacherId: string) {
+  async remove(id: string, userId: string) {
     const assignment = await this.findOne(id);
     
-    // Ensure only the creator can delete
-    if (assignment.teacher.id !== teacherId) {
+    // Ownership check
+    const teacher = await this.teacherRepository.findOne({ where: { user: { id: userId } } });
+    if (!teacher || assignment.teacher.id !== teacher.id) {
       throw new ForbiddenException('You can only delete your own assignments');
     }
 
