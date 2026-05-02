@@ -68,7 +68,6 @@ export class AssignmentsService {
       dueDate: [FilterOperator.GTE, FilterOperator.LTE, FilterOperator.GT, FilterOperator.LT, FilterOperator.EQ],
       startDate: [FilterOperator.GTE, FilterOperator.LTE, FilterOperator.GT, FilterOperator.LT, FilterOperator.EQ],
     },
-    relations: ['teacher', 'schoolClass'],
   };
 
   async findAll(query: PaginateQuery): Promise<Paginated<Assignment>> {
@@ -86,8 +85,7 @@ export class AssignmentsService {
     }
 
     const queryBuilder = this.assignmentRepository.createQueryBuilder('assignment')
-      .leftJoinAndSelect('assignment.teacher', 'teacher')
-      .leftJoinAndSelect('assignment.schoolClass', 'schoolClass')
+      .leftJoin('assignment.schoolClass', 'schoolClass')
       .where('schoolClass.id = :classId', { classId: student.schoolClass.id });
 
     return paginate(query, queryBuilder, AssignmentsService.paginateConfig);
