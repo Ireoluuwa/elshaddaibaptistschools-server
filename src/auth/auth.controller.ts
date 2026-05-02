@@ -31,12 +31,32 @@ export class AuthController {
   @Get('profile')
   @ResponseMessage('Profile fetched successfully')
   async getProfile(@Request() req) {
+
     const user = await this.usersService.findOneById(req.user.sub);
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
     
+   
     const { password, ...result } = user;
-    return result;
+
+
+    let className = '';
+    let deptName = '';
+
+    if (user.studentProfile) {
+      className = user.studentProfile.schoolClass?.name || '';
+      deptName = user.studentProfile.department?.name || '';
+    } else if (user.teacherProfile) {
+      className = user.teacherProfile.schoolClass?.name || '';
+      deptName = user.teacherProfile.department?.name || '';
+    }
+
+    const schoolClass = deptName ? `${className} (${deptName})`.trim() : className;
+
+    return {
+      ...result,
+      schoolClass: schoolClass || null,
+    };
   }
 }
