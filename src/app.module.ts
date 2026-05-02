@@ -9,6 +9,7 @@ import { ProfileModule } from './profile/profile.module';
 import { AcademicsModule } from './academics/academics.module';
 import { ReportsModule } from './reports/reports.module';
 import { AssignmentsModule } from './assignments/assignments.module';
+import { StudentModule } from './student/student.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { AssignmentsModule } from './assignments/assignments.module';
     AcademicsModule,
     ReportsModule,
     AssignmentsModule,
+    StudentModule,
   ],
   controllers: [AppController],
   providers: [AppService],
