@@ -29,6 +29,13 @@ export class StudentController {
     return this.studentService.checkUsername(username);
   }
 
+  @Get('last-username')
+  @Roles(UserRole.TEACHER, UserRole.ADMIN)
+  @ResponseMessage('Last student username retrieved')
+  async getLastUsername() {
+    return this.studentService.getLastUsername();
+  }
+
   @Post('manual')
   @Roles(UserRole.TEACHER, UserRole.ADMIN)
   @ResponseMessage('Student enrolled successfully')
