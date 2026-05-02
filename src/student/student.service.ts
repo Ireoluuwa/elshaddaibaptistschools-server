@@ -41,7 +41,6 @@ export class StudentService {
       throw new NotFoundException('Student profile not found');
     }
 
-    //  Latest Assignments (Next 4 active assignments)
     let latestAssignments: Assignment[] = [];
     if (student.schoolClass) {
       latestAssignments = await this.assignmentRepository.find({
@@ -54,7 +53,6 @@ export class StudentService {
       });
     }
 
-    // Latest Weekly Report
     const latestReport = await this.reportRepository.findOne({
       where: { 
         student: { id: student.id }, 
@@ -84,28 +82,40 @@ export class StudentService {
     };
   }
 
+  async checkUsername(username: string) {
+    const existingUser = await this.userRepository.findOne({ where: { username } });
+    return { isAvailable: !existingUser };
+  }
+
+  async getLastUsername() {
+    const lastUser = await this.userRepository.findOne({
+      where: { role: UserRole.STUDENT },
+      order: { createdAt: 'DESC' },
+    });
+    return { lastUsername: lastUser?.username || null };
+  }
+
   async enrollStudent(dto: CreateStudentDto) {
-    // 1. Check if user exists
+   
     const existingUser = await this.userRepository.findOne({ where: { username: dto.username } });
     if (existingUser) {
       throw new ConflictException(`Username ${dto.username} already exists`);
     }
 
-    // 2. Fetch class and optional department
     const schoolClass = await this.classRepository.findOne({ where: { id: dto.classId } });
     if (!schoolClass) throw new NotFoundException('Class not found');
 
-    let department = null;
+    let department: Department | null = null;
     if (dto.departmentId) {
       department = await this.departmentRepository.findOne({ where: { id: dto.departmentId } });
       if (!department) throw new NotFoundException('Department not found');
     }
 
-    // 3. Hash password
-    const rawPassword = dto.password || 'password123'; // Default password
+ 
+    const rawPassword = dto.password || '1234'; 
     const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
-    // 4. Create User
+ 
     const user = this.userRepository.create({
       username: dto.username,
       password: hashedPassword,
@@ -113,14 +123,14 @@ export class StudentService {
     });
     const savedUser = await this.userRepository.save(user);
 
-    // 5. Create Student Profile
+    
     const student = this.studentRepository.create({
       firstName: dto.firstName,
       lastName: dto.lastName,
       schoolClass,
-      department,
+      department: department || undefined,
       user: savedUser,
-      dateOfBirth: '2000-01-01', // Fallback defaults since manual UI doesn't have these
+      dateOfBirth: '2000-01-01', 
       yearJoined: new Date().getFullYear(),
       homeAddress: 'TBD',
       guardianName: 'TBD',
@@ -131,7 +141,7 @@ export class StudentService {
   }
 
   async batchEnrollStudents(fileBuffer: Buffer) {
-    // 1. Parse CSV
+    
     const csvData = fileBuffer.toString('utf-8');
     const parsed = Papa.parse(csvData, {
       header: true,
@@ -144,7 +154,7 @@ export class StudentService {
 
     const rows = parsed.data as any[];
     
-    // 2. Start a Database Transaction
+
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -153,7 +163,7 @@ export class StudentService {
       let enrolledCount = 0;
 
       for (const [index, row] of rows.entries()) {
-        const rowNum = index + 2; // +1 for 0-index, +1 for header
+        const rowNum = index + 2; 
         
         const { first_name, last_name, username, class: className, department: deptName } = row;
 
@@ -161,20 +171,20 @@ export class StudentService {
           throw new BadRequestException(`Row ${rowNum}: Missing required fields (first_name, last_name, username, class).`);
         }
 
-        // Check duplicates
+        
         const existing = await queryRunner.manager.findOne(User, { where: { username } });
         if (existing) {
           throw new ConflictException(`Row ${rowNum}: Username '${username}' is already taken.`);
         }
 
-        // Find Class
+      
         const schoolClass = await queryRunner.manager.findOne(SchoolClass, { where: { name: className } });
         if (!schoolClass) {
           throw new NotFoundException(`Row ${rowNum}: Class '${className}' not found in the system.`);
         }
 
-        // Find Department if provided
-        let department = null;
+        
+        let department: Department | null = null;
         if (deptName && deptName.trim() !== '') {
           department = await queryRunner.manager.findOne(Department, { where: { name: deptName } });
           if (!department) {
@@ -182,10 +192,10 @@ export class StudentService {
           }
         }
 
-        // Hash Default Password
-        const hashedPassword = await bcrypt.hash('password123', 10);
+        
+        const hashedPassword = await bcrypt.hash('1234', 10);
 
-        // Create User
+        
         const user = queryRunner.manager.create(User, {
           username,
           password: hashedPassword,
@@ -193,12 +203,12 @@ export class StudentService {
         });
         const savedUser = await queryRunner.manager.save(user);
 
-        // Create Profile
+
         const student = queryRunner.manager.create(Student, {
           firstName: first_name,
           lastName: last_name,
           schoolClass,
-          department,
+          department: department || undefined,
           user: savedUser,
           dateOfBirth: '2000-01-01',
           yearJoined: new Date().getFullYear(),
@@ -211,16 +221,16 @@ export class StudentService {
         enrolledCount++;
       }
 
-      // If loop completes without throwing, commit everything!
+      
       await queryRunner.commitTransaction();
       return { message: `Successfully enrolled ${enrolledCount} students in batch.` };
 
     } catch (err) {
-      // If ANY row fails, completely rollback the entire CSV upload
+      
       await queryRunner.rollbackTransaction();
-      throw err; // Send the exact row error back to the frontend
+      throw err; 
     } finally {
-      // Release connection back to pool
+    
       await queryRunner.release();
     }
   }
