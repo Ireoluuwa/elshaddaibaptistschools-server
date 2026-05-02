@@ -20,7 +20,11 @@ async function bootstrap() {
   }));
   app.setGlobalPrefix('api');
   app.useGlobalInterceptors(new TransformInterceptor(new Reflector()));
-  app.enableCors();
+  app.enableCors({
+    origin: ['http://localhost:3000', process.env.FRONTEND_URL].filter(Boolean),
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+  });
   
   await app.init();
   isInitialized = true;
