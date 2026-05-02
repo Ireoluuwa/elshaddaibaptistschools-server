@@ -1,37 +1,55 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# El-Shaddai Baptist Schools - Backend API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A comprehensive School Management System built with **NestJS**, **TypeORM**, and **PostgreSQL**. This platform provides role-based access for Administrators, Teachers, and Students, handling everything from assignments and weekly academic reports to batch student enrollments.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Features
 
-## Description
+* **Role-Based Access Control (RBAC)**: Secure endpoints restricted by user roles (Admin, Teacher, Student) using JWT Authentication.
+* **Academic Structure Management**: Complete management of Academic Years, Terms, Classes (e.g., SS1), and Departments (e.g., Science, Arts).
+* **Assignment Module**: 
+  * Teachers can create, update, and manage assignments.
+  * Students can fetch paginated assignments strictly filtered to their enrolled class.
+  * Filter support for "Active" and "Past Due" statuses.
+* **Weekly Reports**:
+  * Teachers can log weekly academic scores and behavioral remarks for students.
+  * Automatic grade and GPA calculations on a 5.0 scale.
+* **Student Dashboard**: Real-time aggregated data including the student's latest active assignments and their most recent weekly report behavioral score.
+* **Enrollment System**:
+  * **Manual Entry**: Quick UI-driven creation of student accounts.
+  * **Batch CSV Upload**: High-speed, transaction-safe parsing of CSV files (`papaparse`) to automatically generate hundreds of student profiles, map them to classes/departments, and safely hash default passwords.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Tech Stack
 
-## Project setup
+* **Framework**: [NestJS](https://nestjs.com/)
+* **Database**: PostgreSQL
+* **ORM**: TypeORM
+* **Authentication**: Passport-JWT & bcrypt
+* **Validation**: class-validator & class-transformer
+* **Pagination**: nestjs-paginate
+* **CSV Processing**: Papaparse & Multer
+
+## Getting Started
+
+### Prerequisites
+* Node.js (v18+)
+* PostgreSQL Database
+
+### Installation
 
 ```bash
 $ npm install
 ```
 
-## Compile and run the project
+### Environment Variables
+Create a `.env` file in the root directory and configure the following variables:
+
+```env
+DATABASE_URL=postgresql://user:password@localhost:5432/elshaddai_db
+JWT_SECRET=your_super_secret_jwt_key
+PORT=3000
+```
+
+### Running the app
 
 ```bash
 # development
@@ -44,55 +62,14 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
-## Run tests
+## Core Architecture Highlights
 
-```bash
-# unit tests
-$ npm run test
+### Transactional Safety
+Critical bulk operations (like the Student CSV Batch Upload) are wrapped in strict TypeORM QueryRunner transactions. If a single row out of 200 contains an error (e.g., an invalid class name or duplicate username), the entire operation rolls back to prevent fragmented database states, returning the exact row error to the client.
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### Relational Mapping
+The system leverages complex TypeORM relations (`OneToOne`, `ManyToOne`, `OneToMany`) to tightly couple authenticable `User` accounts to highly detailed `Student` and `Teacher` profiles, which are themselves linked dynamically to `SchoolClass` and `Department` entities.
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+This project is proprietary and intended solely for use by El-Shaddai Baptist Schools.
