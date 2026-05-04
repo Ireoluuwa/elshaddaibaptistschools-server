@@ -1,5 +1,4 @@
-// Academics Controller to manage classes and departments
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Query } from '@nestjs/common';
 import { AcademicsService } from './academics.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -74,5 +73,38 @@ export class AcademicsController {
   @ResponseMessage('All academic periods retrieved successfully')
   async getAllPeriods() {
     return this.academicsService.getAllPeriods();
+  }
+
+  @Post('subjects')
+  @ResponseMessage('Subject created successfully')
+  async createSubject(@Body() body: { name: string }) {
+    return this.academicsService.createSubject(body.name);
+  }
+
+  @Get('subjects')
+  @ResponseMessage('Subjects retrieved successfully')
+  async getAllSubjects() {
+    return this.academicsService.getAllSubjects();
+  }
+
+  @Post('curriculum')
+  @ResponseMessage('Curriculum mapping created successfully')
+  async createCurriculumMapping(
+    @Body() body: { schoolClassId: string; departmentId?: string; subjectId: string },
+  ) {
+    return this.academicsService.createCurriculumMapping(
+      body.schoolClassId,
+      body.departmentId || null,
+      body.subjectId,
+    );
+  }
+
+  @Get('subjects/mapped')
+  @ResponseMessage('Mapped subjects retrieved successfully')
+  async getMappedSubjects(
+    @Query('classId') classId: string,
+    @Query('departmentId') departmentId?: string,
+  ) {
+    return this.academicsService.getMappedSubjects(classId, departmentId);
   }
 }
