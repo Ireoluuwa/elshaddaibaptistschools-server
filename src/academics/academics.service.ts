@@ -1,6 +1,6 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { SchoolClass } from './entities/school-class.entity';
 import { Department } from './entities/department.entity';
 import { AcademicYear } from './entities/academic-year.entity';
@@ -142,5 +142,44 @@ export class AcademicsService {
 
   async findDepartmentById(id: string) {
     return this.departmentRepository.findOne({ where: { id } });
+  }
+
+  async createSubject(name: string) {
+    const existing = await this.subjectRepository.findOne({ where: { name } });
+    if (existing) throw new ConflictException('Subject already exists');
+
+    const subject = this.subjectRepository.create({ name });
+    return this.subjectRepository.save(subject);
+  }
+
+  async getAllSubjects() {
+    return this.subjectRepository.find({ order: { name: 'ASC' } });
+  }
+
+  async createCurriculumMapping(schoolClassId: string, departmentId: string | null, subjectId: string) {
+    const mapping = this.curriculumRepository.create({
+      schoolClass: { id: schoolClassId } as any,
+      department: departmentId ? { id: departmentId } as any : null,
+      subject: { id: subjectId } as any,
+    });
+    return this.curriculumRepository.save(mapping);
+  }
+
+  async getMappedSubjects(schoolClassId: string, departmentId?: string | null) {
+    const query: any = { schoolClass: { id: schoolClassId } };
+    
+    if (departmentId) {
+      query.department = { id: departmentId };
+    } else {
+      query.department = IsNull();
+    }
+
+    const mappings = await this.curriculumRepository.find({
+      where: query,
+      relations: ['subject'],
+      order: { subject: { name: 'ASC' } }
+    });
+
+    return mappings.map(m => m.subject);
   }
 }
