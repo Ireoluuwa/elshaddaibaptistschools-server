@@ -5,6 +5,8 @@ import { SchoolClass } from './entities/school-class.entity';
 import { Department } from './entities/department.entity';
 import { AcademicYear } from './entities/academic-year.entity';
 import { Term } from './entities/term.entity';
+import { Subject } from './entities/subject.entity';
+import { Curriculum } from './entities/curriculum.entity';
 
 @Injectable()
 export class AcademicsService {
@@ -18,6 +20,10 @@ export class AcademicsService {
     private readonly academicYearRepository: Repository<AcademicYear>,
     @InjectRepository(Term)
     private readonly termRepository: Repository<Term>,
+    @InjectRepository(Subject)
+    private readonly subjectRepository: Repository<Subject>,
+    @InjectRepository(Curriculum)
+    private readonly curriculumRepository: Repository<Curriculum>,
   ) {}
 
   async createAcademicYear(name: string, isCurrent: boolean) {
