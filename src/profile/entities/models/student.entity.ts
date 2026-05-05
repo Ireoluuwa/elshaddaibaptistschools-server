@@ -21,16 +21,16 @@ export class Student extends BaseEntity {
   @Column({ type: 'date' })
   dateOfBirth: string;
 
-  @Column()
+  @Column({ nullable: true })
   yearJoined: number;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', nullable: true })
   homeAddress: string;
 
-  @Column()
+  @Column({ nullable: true })
   guardianName: string;
 
-  @Column()
+  @Column({ nullable: true })
   guardianPhone: string;
 
   @Column({ nullable: true })
