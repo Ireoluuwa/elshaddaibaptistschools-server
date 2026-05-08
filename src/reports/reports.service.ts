@@ -25,15 +25,6 @@ export class ReportsService {
 
     // Find the term and its academic year
     const term = await this.academicsService.findTermById(termId);
-    
-    // Get current active term to check the week
-    const currentTerm = await this.academicsService.getCurrentTerm();
-    
-    if (currentTerm && termId === currentTerm.id) {
-      if (weekNumber < currentTerm.currentWeek) {
-        throw new Error('Editing reports for previous weeks is not allowed');
-      }
-    }
 
     // Check if report already exists for this student/term/week
     let report: WeeklyReport;
@@ -81,7 +72,6 @@ export class ReportsService {
 
     const students = await this.studentRepository.find({
       where: { schoolClass: { id: teacher.schoolClass.id } },
-      relations: ['user'],
       order: { firstName: 'ASC' },
     });
 
@@ -111,7 +101,7 @@ export class ReportsService {
     //  Get student info
     const student = await this.studentRepository.findOne({
       where: { id: studentId },
-      relations: ['schoolClass', 'department', 'user'],
+      relations: ['schoolClass', 'department'],
     });
 
     if (!student) throw new NotFoundException('Student not found');
@@ -146,8 +136,6 @@ export class ReportsService {
         name: `${student.firstName} ${student.lastName}`,
         class: `${student.schoolClass?.name || ''} ${student.department?.name || ''}`.trim(),
         studentId: student.user?.username || 'N/A',
-        classId: student.schoolClass?.id,
-        departmentId: student.department?.id || null,
       },
       timeline,
       activeReport: activeReport || null,
@@ -157,20 +145,9 @@ export class ReportsService {
   async getReportById(id: string) {
     const report = await this.reportRepository.findOne({
       where: { id },
-      relations: ['student', 'student.schoolClass', 'term', 'term.academicYear'],
     });
-
     if (!report) throw new NotFoundException('Report not found');
-
-    // Find the teacher for this class
-    const teacher = await this.teacherRepository.findOne({
-      where: { schoolClass: { id: report.student.schoolClass?.id } },
-    });
-
-    return {
-      ...report,
-      teacherName: teacher ? `${teacher.firstName} ${teacher.lastName}` : 'Class Teacher',
-    };
+    return report;
   }
 
   async getStudentDashboard(userId: string, termId?: string) {

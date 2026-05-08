@@ -153,10 +153,7 @@ export class AcademicsService {
   }
 
   async getAllSubjects() {
-    return this.subjectRepository.find({ 
-      select: ['id', 'name'],
-      order: { name: 'ASC' } 
-    });
+    return this.subjectRepository.find({ order: { name: 'ASC' } });
   }
 
   async createCurriculumMapping(schoolClassId: string, departmentId: string | null, subjectId: string) {
@@ -183,9 +180,6 @@ export class AcademicsService {
       order: { subject: { name: 'ASC' } }
     });
 
-    return mappings.map(m => ({
-      id: m.subject.id,
-      name: m.subject.name
-    }));
+    return mappings.map(m => m.subject);
   }
 }
