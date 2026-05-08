@@ -81,11 +81,11 @@ export class AcademicsController {
     return this.academicsService.createSubject(body.name);
   }
 
-  @Get('subjects')
-  @ResponseMessage('Subjects retrieved successfully')
-  async getAllSubjects() {
-    return this.academicsService.getAllSubjects();
-  }
+  // @Get('subjects')
+  // @ResponseMessage('Subjects retrieved successfully')
+  // async getAllSubjects() {
+  //   return this.academicsService.getAllSubjects();
+  // }
 
   @Post('curriculum')
   @ResponseMessage('Curriculum mapping created successfully')
@@ -99,7 +99,7 @@ export class AcademicsController {
     );
   }
 
-  @Get('subjects/mapped')
+  @Get('subjects')
   @ResponseMessage('Mapped subjects retrieved successfully')
   async getMappedSubjects(
     @Query('classId') classId: string,
