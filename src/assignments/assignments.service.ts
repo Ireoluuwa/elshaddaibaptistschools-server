@@ -60,7 +60,8 @@ export class AssignmentsService {
     nullSort: 'last',
     defaultSortBy: [['dueDate', 'DESC']],
     searchableColumns: ['title', 'description'],
-    select: ['id', 'title', 'description', 'startDate', 'dueDate', 'attachmentUrl'],
+    select: ['id', 'title', 'description', 'startDate', 'dueDate', 'attachmentUrl', 'schoolClass.id', 'schoolClass.name'],
+    relations: ['schoolClass'],
     filterableColumns: {
       'schoolClass.id': true,
       'teacher.id': true,
@@ -75,6 +76,7 @@ export class AssignmentsService {
 
   async findAllForTeacher(query: PaginateQuery, userId: string): Promise<Paginated<Assignment>> {
     const queryBuilder = this.assignmentRepository.createQueryBuilder('assignment')
+      .leftJoinAndSelect('assignment.schoolClass', 'schoolClass')
       .leftJoin('assignment.teacher', 'teacher')
       .where('teacher.id = :userId', { userId });
 
@@ -92,7 +94,7 @@ export class AssignmentsService {
     }
 
     const queryBuilder = this.assignmentRepository.createQueryBuilder('assignment')
-      .leftJoin('assignment.schoolClass', 'schoolClass')
+      .leftJoinAndSelect('assignment.schoolClass', 'schoolClass')
       .where('schoolClass.id = :classId', { classId: student.schoolClass.id });
 
     return paginate(query, queryBuilder, AssignmentsService.paginateConfig);
