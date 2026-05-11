@@ -114,7 +114,10 @@ export class AcademicsService {
   }
 
   async getAllClasses() {
-    return this.classRepository.find({ order: { name: 'ASC' } });
+    return this.classRepository.find({ 
+      select: ['id', 'name'],
+      order: { name: 'ASC' } 
+    });
   }
 
   async createDepartment(name: string) {

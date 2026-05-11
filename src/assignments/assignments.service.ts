@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { paginate, FilterOperator, type Paginated, type PaginateConfig, type PaginateQuery } from 'nestjs-paginate';
 import { Assignment } from './entities/assignment.entity';
 import { CreateAssignmentDto } from './dto/create-assignment.dto';
-import { Teacher } from '../profile/entities/models/teacher.entity';
+import { User } from '../users/entities/user.entity';
 import { SchoolClass } from '../academics/entities/school-class.entity';
 import { Student } from '../profile/entities/models/student.entity';
 
@@ -13,17 +13,17 @@ export class AssignmentsService {
   constructor(
     @InjectRepository(Assignment)
     private readonly assignmentRepository: Repository<Assignment>,
-    @InjectRepository(Teacher)
-    private readonly teacherRepository: Repository<Teacher>,
     @InjectRepository(SchoolClass)
     private readonly classRepository: Repository<SchoolClass>,
     @InjectRepository(Student)
     private readonly studentRepository: Repository<Student>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
 
   async create(dto: CreateAssignmentDto, userId: string) {
-    const teacher = await this.teacherRepository.findOne({ where: { user: { id: userId } } });
-    if (!teacher) throw new NotFoundException('Teacher profile not found');
+    const teacher = await this.userRepository.findOne({ where: { id: userId } });
+    if (!teacher) throw new NotFoundException('User not found');
 
     const schoolClass = await this.classRepository.findOne({ where: { id: dto.classId } });
     if (!schoolClass) throw new NotFoundException('Class not found');
@@ -41,8 +41,7 @@ export class AssignmentsService {
     const assignment = await this.findOne(id);
     
     // Ownership check
-    const teacher = await this.teacherRepository.findOne({ where: { user: { id: userId } } });
-    if (!teacher || assignment.teacher.id !== teacher.id) {
+    if (assignment.teacher.id !== userId) {
       throw new ForbiddenException('You can only update your own assignments');
     }
 
@@ -72,6 +71,14 @@ export class AssignmentsService {
 
   async findAll(query: PaginateQuery): Promise<Paginated<Assignment>> {
     return paginate(query, this.assignmentRepository, AssignmentsService.paginateConfig);
+  }
+
+  async findAllForTeacher(query: PaginateQuery, userId: string): Promise<Paginated<Assignment>> {
+    const queryBuilder = this.assignmentRepository.createQueryBuilder('assignment')
+      .leftJoin('assignment.teacher', 'teacher')
+      .where('teacher.id = :userId', { userId });
+
+    return paginate(query, queryBuilder, AssignmentsService.paginateConfig);
   }
 
   async findAllForStudent(query: PaginateQuery, userId: string): Promise<Paginated<Assignment>> {
@@ -104,8 +111,7 @@ export class AssignmentsService {
     const assignment = await this.findOne(id);
     
     // Ownership check
-    const teacher = await this.teacherRepository.findOne({ where: { user: { id: userId } } });
-    if (!teacher || assignment.teacher.id !== teacher.id) {
+    if (assignment.teacher.id !== userId) {
       throw new ForbiddenException('You can only delete your own assignments');
     }
 
