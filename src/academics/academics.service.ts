@@ -1,6 +1,6 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull } from 'typeorm';
+import { Repository } from 'typeorm';
 import { SchoolClass } from './entities/school-class.entity';
 import { Department } from './entities/department.entity';
 import { AcademicYear } from './entities/academic-year.entity';
@@ -169,16 +169,15 @@ export class AcademicsService {
   }
 
   async getMappedSubjects(schoolClassId: string, departmentId?: string | null) {
-    const query: any = { schoolClass: { id: schoolClassId } };
-    
+    const where: any = { schoolClass: { id: schoolClassId } };
+
     if (departmentId) {
-      query.department = { id: departmentId };
-    } else {
-      query.department = IsNull();
+      where.department = { id: departmentId };
     }
+    // When no departmentId, return all subjects for the class regardless of department
 
     const mappings = await this.curriculumRepository.find({
-      where: query,
+      where,
       relations: ['subject'],
       order: { subject: { name: 'ASC' } }
     });

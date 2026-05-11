@@ -137,6 +137,8 @@ export class ReportsService {
         name: `${student.firstName} ${student.lastName}`,
         class: `${student.schoolClass?.name || ''} ${student.department?.name || ''}`.trim(),
         studentId: student.user?.username || 'N/A',
+        classId: student.schoolClass?.id || null,
+        departmentId: student.department?.id || null,
       },
       timeline,
       activeReport: activeReport || null,
