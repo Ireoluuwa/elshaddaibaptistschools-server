@@ -1,6 +1,6 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { SchoolClass } from './entities/school-class.entity';
 import { Department } from './entities/department.entity';
 import { AcademicYear } from './entities/academic-year.entity';
@@ -169,19 +169,40 @@ export class AcademicsService {
   }
 
   async getMappedSubjects(schoolClassId: string, departmentId?: string | null) {
-    const where: any = { schoolClass: { id: schoolClassId } };
+    // Always fetch subjects with no department (shared/general subjects for the class)
+    const sharedWhere: any = { schoolClass: { id: schoolClassId }, department: IsNull() };
 
     if (departmentId) {
-      where.department = { id: departmentId };
-    }
-    // When no departmentId, return all subjects for the class regardless of department
+      // Fetch both department-specific and shared subjects, then deduplicate
+      const deptWhere: any = { schoolClass: { id: schoolClassId }, department: { id: departmentId } };
 
+      const [sharedMappings, deptMappings] = await Promise.all([
+        this.curriculumRepository.find({ where: sharedWhere, relations: ['subject'] }),
+        this.curriculumRepository.find({ where: deptWhere, relations: ['subject'] }),
+      ]);
+
+      const seen = new Set<string>();
+      const combined = [...sharedMappings, ...deptMappings].filter(m => {
+        if (seen.has(m.subject.id)) return false;
+        seen.add(m.subject.id);
+        return true;
+      });
+
+      return combined
+        .map(m => m.subject)
+        .sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    // No department — return all subjects for the class regardless of department mapping
     const mappings = await this.curriculumRepository.find({
-      where,
+      where: { schoolClass: { id: schoolClassId } },
       relations: ['subject'],
-      order: { subject: { name: 'ASC' } }
+      order: { subject: { name: 'ASC' } },
     });
 
-    return mappings.map(m => m.subject);
+    const seen = new Set<string>();
+    return mappings
+      .filter(m => { if (seen.has(m.subject.id)) return false; seen.add(m.subject.id); return true; })
+      .map(m => m.subject);
   }
 }
