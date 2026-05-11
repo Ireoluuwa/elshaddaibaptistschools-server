@@ -47,6 +47,7 @@ export class ProfileService {
       guardianName: profile.guardianName,
       guardianPhone: profile.guardianPhone,
       guardianEmail: profile.guardianEmail,
+      avatarUrl: profile.avatarUrl || null,
    
     };
   }
@@ -73,6 +74,7 @@ export class ProfileService {
       address: profile.address,
       email: profile.email,
       phoneNumber: profile.phoneNumber,
+      avatarUrl: profile.avatarUrl || null,
     };
   }
 

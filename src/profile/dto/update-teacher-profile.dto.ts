@@ -28,4 +28,8 @@ export class UpdateTeacherProfileDto {
   @IsOptional()
   @IsString()
   address?: string;
+
+  @IsOptional()
+  @IsString()
+  avatarUrl?: string;
 }

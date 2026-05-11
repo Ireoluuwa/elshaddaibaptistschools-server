@@ -33,4 +33,8 @@ export class UpdateStudentProfileDto {
   @IsEmail()
   @IsOptional()
   guardianEmail?: string;
+
+  @IsOptional()
+  @IsString()
+  avatarUrl?: string;
 }
