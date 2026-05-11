@@ -36,6 +36,9 @@ export class Student extends BaseEntity {
   @Column({ nullable: true })
   guardianEmail: string;
 
+  @Column({ type: 'text', nullable: true })
+  avatarUrl: string;
+
   @OneToOne(() => User, (user) => user.studentProfile, { onDelete: 'CASCADE' })
   @JoinColumn()
   user: User;

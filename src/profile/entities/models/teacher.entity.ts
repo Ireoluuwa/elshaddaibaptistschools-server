@@ -27,6 +27,9 @@ export class Teacher extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   address: string;
 
+  @Column({ type: 'text', nullable: true })
+  avatarUrl: string;
+
   @OneToOne(() => User, (user) => user.teacherProfile, { onDelete: 'CASCADE' })
   @JoinColumn()
   user: User;
