@@ -102,7 +102,7 @@ export class ReportsService {
     //  Get student info
     const student = await this.studentRepository.findOne({
       where: { id: studentId },
-      relations: ['schoolClass', 'department'],
+      relations: ['schoolClass', 'department', 'user'],
     });
 
     if (!student) throw new NotFoundException('Student not found');
