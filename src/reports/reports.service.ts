@@ -73,6 +73,7 @@ export class ReportsService {
     const students = await this.studentRepository.find({
       where: { schoolClass: { id: teacher.schoolClass.id } },
       order: { firstName: 'ASC' },
+      relations: ['user'],
     });
 
    
