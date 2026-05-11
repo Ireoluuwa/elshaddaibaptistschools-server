@@ -62,6 +62,8 @@ export class AssignmentsService {
     searchableColumns: ['title', 'description'],
     select: ['id', 'title', 'description', 'startDate', 'dueDate', 'attachmentUrl', 'schoolClass.id', 'schoolClass.name'],
     relations: ['schoolClass'],
+    defaultLimit: 10,
+    maxLimit: 100,
     filterableColumns: {
       'schoolClass.id': true,
       'teacher.id': true,
