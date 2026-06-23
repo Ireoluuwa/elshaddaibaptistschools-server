@@ -8,6 +8,7 @@ import { UsersModule } from './users/users.module';
 import { ProfileModule } from './profile/profile.module';
 import { AcademicsModule } from './academics/academics.module';
 import { ReportsModule } from './reports/reports.module';
+import { ResultsModule } from './results/results.module';
 import { AssignmentsModule } from './assignments/assignments.module';
 import { StudentModule } from './student/student.module';
 
@@ -25,6 +26,7 @@ import { StudentModule } from './student/student.module';
     ProfileModule,
     AcademicsModule,
     ReportsModule,
+    ResultsModule,
     AssignmentsModule,
     StudentModule,
   ],
