@@ -134,6 +134,12 @@ export class ResultsService {
       relations: ['term', 'term.academicYear'],
     });
 
+    const classTeacher = student.schoolClass?.id
+      ? await this.teacherRepository.findOne({
+          where: { schoolClass: { id: student.schoolClass.id } },
+        })
+      : null;
+
     return {
       periods,
       activeTermId: active?.id || null,
@@ -142,6 +148,9 @@ export class ResultsService {
         name: `${student.firstName} ${student.lastName}`,
         class: `${student.schoolClass?.name || ''} ${student.department?.name || ''}`.trim(),
         studentId: student.user?.username || 'N/A',
+        teacherName: classTeacher
+          ? `${classTeacher.firstName} ${classTeacher.lastName}`
+          : null,
       },
       result: result || null,
     };
