@@ -94,9 +94,24 @@ export class ResultsService {
 
     if (!student) throw new NotFoundException('Student not found');
 
+  
     const result = await this.resultRepository.findOne({
       where: { student: { id: studentId }, term: { id: termId } },
+      relations: ['term', 'term.academicYear'],
     });
+
+    const classTeacher = student.schoolClass?.id
+      ? await this.teacherRepository.findOne({
+          where: { schoolClass: { id: student.schoolClass.id } },
+          relations: ['user'],
+        })
+      : null;
+
+    const teacherName = classTeacher
+      ? [classTeacher.firstName, classTeacher.lastName]
+          .filter((n) => n && n.trim())
+          .join(' ') || classTeacher.user?.username || null
+      : null;
 
     return {
       student: {
@@ -106,6 +121,7 @@ export class ResultsService {
         studentId: student.user?.username || 'N/A',
         classId: student.schoolClass?.id || null,
         departmentId: student.department?.id || null,
+        teacherName,
       },
       result: result || null,
     };
