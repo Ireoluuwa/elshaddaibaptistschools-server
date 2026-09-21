@@ -32,6 +32,12 @@ export class CreateReportDto {
   @Max(7)
   attendance?: number;
 
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  percentage?: number;
+
   @IsEnum(ReportStatus)
-  status: ReportStatus;
+  status!: ReportStatus;
 }

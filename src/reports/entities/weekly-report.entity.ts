@@ -30,6 +30,9 @@ export class WeeklyReport extends BaseEntity {
   @Column({ type: 'int', default: 5 })
   attendance: number;
 
+  @Column({ type: 'float', nullable: true })
+  percentage: number | null;
+
   @Column({
     type: 'enum',
     enum: ReportStatus,
