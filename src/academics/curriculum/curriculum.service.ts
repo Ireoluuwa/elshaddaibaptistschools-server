@@ -46,11 +46,14 @@ export class CurriculumService {
         : [],
     ]);
 
-    const subjectsFor = (departmentId: string | null) =>
-      mappings
-        .filter((m) => (m.department?.id ?? null) === departmentId)
-        .map((m) => m.subject.name)
-        .sort(byName);
+    // Older seed data mapped some subjects twice; list each once.
+    const subjectsFor = (departmentId: string | null) => [
+      ...new Set(
+        mappings
+          .filter((m) => (m.department?.id ?? null) === departmentId)
+          .map((m) => m.subject.name),
+      ),
+    ].sort(byName);
 
     return {
       classId: schoolClass.id,
