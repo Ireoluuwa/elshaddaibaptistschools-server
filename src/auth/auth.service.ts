@@ -1,4 +1,8 @@
-import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
@@ -14,7 +18,9 @@ export class AuthService {
     const user = await this.usersService.findOneByUsername(username);
     if (!user || !(await bcrypt.compare(pass, user.password))) return null;
     if (!user.isActive) {
-      throw new ForbiddenException('This account has been disabled. Please contact the school.');
+      throw new ForbiddenException(
+        'This account has been disabled. Please contact the school.',
+      );
     }
     const { password, ...result } = user;
     return result;
@@ -22,10 +28,10 @@ export class AuthService {
 
   async login(user: any) {
     await this.usersService.update(user.id, { lastLoginAt: new Date() });
-    const payload = { 
-      username: user.username, 
+    const payload = {
+      username: user.username,
       sub: user.id,
-      role: user.role 
+      role: user.role,
     };
     return {
       user: {
@@ -53,13 +59,16 @@ export class AuthService {
       deptName = user.teacherProfile.department?.name || '';
     }
 
-    const schoolClass = deptName ? `${className} (${deptName})`.trim() : className;
+    const schoolClass = deptName
+      ? `${className} (${deptName})`.trim()
+      : className;
 
     return {
       id: user.id,
       username: user.username,
       role: user.role,
-      firstName: user.studentProfile?.firstName || user.teacherProfile?.firstName || '',
+      firstName:
+        user.studentProfile?.firstName || user.teacherProfile?.firstName || '',
       class: className || null,
       department: deptName || null,
       schoolClass: schoolClass || null,

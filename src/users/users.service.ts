@@ -11,28 +11,31 @@ export class UsersService {
   ) {}
 
   async findOneByUsername(username: string): Promise<User | null> {
-    return this.userRepository.findOne({ 
+    return this.userRepository.findOne({
       where: { username },
-      select: ['id', 'username', 'password', 'role', 'isActive'] // Explicitly select password for auth
+      select: ['id', 'username', 'password', 'role', 'isActive'], // Explicitly select password for auth
     });
   }
 
   async findOneById(id: string): Promise<User | null> {
-    return this.userRepository.findOne({ 
+    return this.userRepository.findOne({
       where: { id },
       relations: [
-        'studentProfile', 
-        'studentProfile.schoolClass', 
+        'studentProfile',
+        'studentProfile.schoolClass',
         'studentProfile.department',
-        'teacherProfile', 
+        'teacherProfile',
         'teacherProfile.schoolClass',
-        'teacherProfile.department'
-      ] 
+        'teacherProfile.department',
+      ],
     });
   }
 
   async isActive(id: string) {
-    const user = await this.userRepository.findOne({ where: { id }, select: ['id', 'isActive'] });
+    const user = await this.userRepository.findOne({
+      where: { id },
+      select: ['id', 'isActive'],
+    });
     return !!user?.isActive;
   }
 

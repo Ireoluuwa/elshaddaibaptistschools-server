@@ -14,7 +14,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET') || 'default-secret-key',
+      secretOrKey:
+        configService.get<string>('JWT_SECRET') || 'default-secret-key',
     });
   }
 
@@ -23,10 +24,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!(await this.usersService.isActive(payload.sub))) {
       throw new UnauthorizedException('This account has been disabled.');
     }
-    return { 
-      sub: payload.sub, 
-      username: payload.username, 
-      role: payload.role 
+    return {
+      sub: payload.sub,
+      username: payload.username,
+      role: payload.role,
     };
   }
 }
