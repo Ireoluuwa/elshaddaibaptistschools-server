@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Student } from '../profile/entities/models/student.entity';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
+import { EnrollmentOutcome } from '../enrollments/enums/enrollment-outcome.enum';
 
 export type StudentStatus = 'active' | 'graduated' | 'withdrawn';
 
@@ -33,7 +34,7 @@ export class AdminStudentsService {
     if (!student) throw new NotFoundException('Student not found');
 
     const history = await this.enrollmentsService.historyFor(id);
-    const graduated = history.some((e) => e.outcome === 'graduated');
+    const graduated = history.some((e) => e.outcome === EnrollmentOutcome.GRADUATED);
 
     return {
       ...this.toListItem(student, graduated),
