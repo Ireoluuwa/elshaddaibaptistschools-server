@@ -8,7 +8,7 @@ import { ResponseMessage } from '../common/decorators/response-message.decorator
 
 @Controller('academics')
 @UseGuards(JwtAuthGuard, RolesGuard)
-// Only admins change the academic structure. Read routes below also allow teachers.
+// Writes are admin-only; read routes also allow teachers.
 @Roles(UserRole.ADMIN)
 export class AcademicsController {
   constructor(private readonly academicsService: AcademicsService) {}
