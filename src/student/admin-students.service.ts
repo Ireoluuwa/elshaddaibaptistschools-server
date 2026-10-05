@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+import { User } from '../users/entities/user.entity';
 import { Student } from '../profile/entities/models/student.entity';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { EnrollmentOutcome } from '../enrollments/enums/enrollment-outcome.enum';
@@ -18,6 +20,8 @@ export class AdminStudentsService {
   constructor(
     @InjectRepository(Student)
     private readonly studentRepository: Repository<Student>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     private readonly enrollmentsService: EnrollmentsService,
   ) {}
 
@@ -61,6 +65,19 @@ export class AdminStudentsService {
         outcome: e.outcome,
       })),
     };
+  }
+
+  async setPassword(id: string, newPassword: string) {
+    const student = await this.studentRepository.findOne({
+      where: { id },
+      relations: ['user'],
+    });
+    if (!student?.user) throw new NotFoundException('Student not found');
+
+    await this.userRepository.update(student.user.id, {
+      password: await bcrypt.hash(newPassword, 10),
+    });
+    return { username: student.user.username };
   }
 
   private toListItem(student: Student, graduated: boolean) {
