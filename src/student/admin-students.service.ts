@@ -7,6 +7,12 @@ import { EnrollmentOutcome } from '../enrollments/enums/enrollment-outcome.enum'
 
 export type StudentStatus = 'active' | 'graduated' | 'withdrawn';
 
+// Enrollment fills unknown fields with 'TBD'; report those as missing.
+const provided = (value?: string | null) =>
+  value && value.trim() && value.trim().toUpperCase() !== 'TBD'
+    ? value.trim()
+    : null;
+
 @Injectable()
 export class AdminStudentsService {
   constructor(
@@ -34,10 +40,19 @@ export class AdminStudentsService {
     if (!student) throw new NotFoundException('Student not found');
 
     const history = await this.enrollmentsService.historyFor(id);
-    const graduated = history.some((e) => e.outcome === EnrollmentOutcome.GRADUATED);
+    const graduated = history.some(
+      (e) => e.outcome === EnrollmentOutcome.GRADUATED,
+    );
 
     return {
       ...this.toListItem(student, graduated),
+      dateOfBirth: student.dateOfBirth,
+      yearJoined: student.yearJoined ?? null,
+      homeAddress: provided(student.homeAddress),
+      guardianName: provided(student.guardianName),
+      guardianPhone: provided(student.guardianPhone),
+      guardianEmail: provided(student.guardianEmail),
+      avatarUrl: student.avatarUrl ?? null,
       enrollments: history.map((e) => ({
         session: e.academicYear.name,
         isCurrentSession: e.academicYear.isCurrent,
