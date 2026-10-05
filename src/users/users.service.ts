@@ -27,6 +27,7 @@ export class UsersService {
         'teacherProfile',
         'teacherProfile.schoolClass',
         'teacherProfile.department',
+        'staffProfile',
       ],
     });
   }

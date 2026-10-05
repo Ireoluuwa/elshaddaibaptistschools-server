@@ -4,15 +4,16 @@ import { ProfileService } from './profile.service';
 import { ProfileController } from './profile.controller';
 import { Student } from './entities/models/student.entity';
 import { Teacher } from './entities/models/teacher.entity';
+import { Staff } from './entities/models/staff.entity';
 import { UsersModule } from '../users/users.module';
 import { AcademicsModule } from '../academics/academics.module';
- 
- @Module({
-   imports: [
-     TypeOrmModule.forFeature([Student, Teacher]),
-     UsersModule,
-     AcademicsModule,
-   ],
+
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([Student, Teacher, Staff]),
+    UsersModule,
+    AcademicsModule,
+  ],
   controllers: [ProfileController],
   providers: [ProfileService],
 })

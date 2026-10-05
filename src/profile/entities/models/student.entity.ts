@@ -12,10 +12,14 @@ export class Student extends BaseEntity {
   @Column()
   lastName: string;
 
-  @ManyToOne(() => SchoolClass, (schoolClass) => schoolClass.students, { nullable: true })
+  @ManyToOne(() => SchoolClass, (schoolClass) => schoolClass.students, {
+    nullable: true,
+  })
   schoolClass: SchoolClass;
 
-  @ManyToOne(() => Department, (department) => department.students, { nullable: true })
+  @ManyToOne(() => Department, (department) => department.students, {
+    nullable: true,
+  })
   department: Department;
 
   @Column({ type: 'date' })

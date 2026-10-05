@@ -1,4 +1,10 @@
-import { IsString, IsOptional, IsEmail, IsDateString, IsNumber } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEmail,
+  IsDateString,
+  IsNumber,
+} from 'class-validator';
 
 export class UpdateStudentProfileDto {
   @IsOptional()

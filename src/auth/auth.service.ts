@@ -68,7 +68,15 @@ export class AuthService {
       username: user.username,
       role: user.role,
       firstName:
-        user.studentProfile?.firstName || user.teacherProfile?.firstName || '',
+        user.studentProfile?.firstName ||
+        user.teacherProfile?.firstName ||
+        user.staffProfile?.firstName ||
+        '',
+      lastName:
+        user.studentProfile?.lastName ||
+        user.teacherProfile?.lastName ||
+        user.staffProfile?.lastName ||
+        '',
       class: className || null,
       department: deptName || null,
       schoolClass: schoolClass || null,

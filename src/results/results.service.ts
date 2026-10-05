@@ -17,6 +17,7 @@ import {
   EnrollmentsService,
   placementLabel,
 } from '../enrollments/enrollments.service';
+import { BursaryService } from '../bursary/bursary.service';
 
 @Injectable()
 export class ResultsService {
@@ -29,6 +30,7 @@ export class ResultsService {
     private readonly teacherRepository: Repository<Teacher>,
     private readonly academicsService: AcademicsService,
     private readonly enrollmentsService: EnrollmentsService,
+    private readonly bursaryService: BursaryService,
   ) {}
 
   async upsertResult(dto: UpsertResultDto) {
@@ -129,7 +131,16 @@ export class ResultsService {
         departmentId: placement.department?.id || null,
         teacherName: await this.classTeacherName(placement.schoolClass?.id),
       },
-      result: result ? this.forReportSheet(result) : null,
+      result: result
+        ? this.forReportSheet(
+            result,
+            await this.bursaryService.reportFees(
+              studentId,
+              termId,
+              placement.schoolClass?.id ?? null,
+            ),
+          )
+        : null,
     };
   }
 
@@ -161,6 +172,14 @@ export class ResultsService {
       student,
       targetTermId,
     );
+    const fees = await this.bursaryService.reportFees(
+      student.id,
+      targetTermId,
+      placement.schoolClass?.id ?? null,
+    );
+    // Owing fees: the result is held back and never sent to the student.
+    const feesHold =
+      result && fees.outstanding > 0 ? { outstanding: fees.outstanding } : null;
 
     return {
       periods,
@@ -172,7 +191,8 @@ export class ResultsService {
         studentId: student.user?.username || 'N/A',
         teacherName: await this.classTeacherName(placement.schoolClass?.id),
       },
-      result: result ? this.forReportSheet(result) : null,
+      result: result && !feesHold ? this.forReportSheet(result, fees) : null,
+      feesHold,
     };
   }
 
@@ -280,13 +300,17 @@ export class ResultsService {
     return name || teacher.user?.username || null;
   }
   // Groups the term's signature and dates the way the report sheet reads them.
-  private forReportSheet(result: TerminalResult) {
+  private forReportSheet(
+    result: TerminalResult,
+    fees: { outstanding: number; nextTermTuition: number; ict: number },
+  ) {
     const { term } = result;
     const { signatureUrl, signedDate, vacationDate, resumptionDate } = term;
     const hasDetails =
       signatureUrl || signedDate || vacationDate || resumptionDate;
     return {
       ...result,
+      fees,
       term: {
         id: term.id,
         name: term.name,

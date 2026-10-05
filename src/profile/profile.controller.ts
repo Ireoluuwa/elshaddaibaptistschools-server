@@ -8,6 +8,7 @@ import { User } from '../common/decorators/user.decorator';
 import { UpdateStudentProfileDto } from './dto/update-student-profile.dto';
 import { UpdateTeacherProfileDto } from './dto/update-teacher-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateStaffProfileDto } from './dto/update-staff-profile.dto';
 import { ResponseMessage } from '../common/decorators/response-message.decorator';
 import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
 
@@ -48,6 +49,23 @@ export class ProfileController {
     @Body() updateDto: UpdateTeacherProfileDto,
   ) {
     return this.profileService.updateTeacherProfile(user.sub, updateDto);
+  }
+
+  @Get('staff')
+  @Roles(UserRole.ADMIN, UserRole.BURSAR)
+  @ResponseMessage('Profile retrieved successfully')
+  getStaffProfile(@User() user: JwtPayload) {
+    return this.profileService.getStaffProfile(user.sub);
+  }
+
+  @Patch('staff')
+  @Roles(UserRole.ADMIN, UserRole.BURSAR)
+  @ResponseMessage('Profile updated successfully')
+  updateStaffProfile(
+    @User() user: JwtPayload,
+    @Body() dto: UpdateStaffProfileDto,
+  ) {
+    return this.profileService.updateStaffProfile(user.sub, user.role, dto);
   }
 
   @Post('change-password')
