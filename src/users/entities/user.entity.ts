@@ -3,6 +3,7 @@ import { BaseEntity } from '../../common/base.entity';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { Student } from '../../profile/entities/models/student.entity';
 import { Teacher } from '../../profile/entities/models/teacher.entity';
+import { Staff } from '../../profile/entities/models/staff.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -19,12 +20,19 @@ export class User extends BaseEntity {
   })
   role: UserRole;
 
+  // false = removed by the admin; they can't sign in.
   @Column({ default: true })
   isActive: boolean;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  lastLoginAt: Date | null;
 
   @OneToOne(() => Student, (student) => student.user)
   studentProfile: Student;
 
   @OneToOne(() => Teacher, (teacher) => teacher.user)
   teacherProfile: Teacher;
+
+  @OneToOne(() => Staff, (staff) => staff.user)
+  staffProfile: Staff;
 }

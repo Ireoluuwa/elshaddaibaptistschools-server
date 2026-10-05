@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
@@ -12,14 +12,16 @@ export class AuthService {
 
   async validateUser(username: string, pass: string): Promise<any> {
     const user = await this.usersService.findOneByUsername(username);
-    if (user && (await bcrypt.compare(pass, user.password))) {
-      const { password, ...result } = user;
-      return result;
+    if (!user || !(await bcrypt.compare(pass, user.password))) return null;
+    if (!user.isActive) {
+      throw new ForbiddenException('This account has been disabled. Please contact the school.');
     }
-    return null;
+    const { password, ...result } = user;
+    return result;
   }
 
   async login(user: any) {
+    await this.usersService.update(user.id, { lastLoginAt: new Date() });
     const payload = { 
       username: user.username, 
       sub: user.id,

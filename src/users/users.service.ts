@@ -31,6 +31,11 @@ export class UsersService {
     });
   }
 
+  async isActive(id: string) {
+    const user = await this.userRepository.findOne({ where: { id }, select: ['id', 'isActive'] });
+    return !!user?.isActive;
+  }
+
   async create(userData: Partial<User>): Promise<User> {
     const user = this.userRepository.create(userData);
     return this.userRepository.save(user);
