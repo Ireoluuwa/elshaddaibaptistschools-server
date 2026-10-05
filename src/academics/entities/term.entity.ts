@@ -34,6 +34,10 @@ export class Term extends BaseEntity {
   @Column({ type: 'date', nullable: true })
   resumptionDate: string | null;
 
-  @ManyToOne(() => AcademicYear, (academicYear: AcademicYear) => academicYear.terms, { onDelete: 'CASCADE' })
+  @ManyToOne(
+    () => AcademicYear,
+    (academicYear: AcademicYear) => academicYear.terms,
+    { onDelete: 'CASCADE' },
+  )
   academicYear: AcademicYear;
 }

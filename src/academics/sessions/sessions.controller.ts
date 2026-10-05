@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -36,7 +45,10 @@ export class SessionsController {
 
   @Patch('terms/:id')
   @ResponseMessage('Term updated successfully')
-  updateTerm(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateTermDto) {
+  updateTerm(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateTermDto,
+  ) {
     return this.sessionsService.updateTerm(id, dto);
   }
 
@@ -54,7 +66,10 @@ export class SessionsController {
 
   @Patch('terms/:id/report-details')
   @ResponseMessage('Report sheet details saved successfully')
-  updateReportDetails(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateReportDetailsDto) {
+  updateReportDetails(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateReportDetailsDto,
+  ) {
     return this.sessionsService.updateReportDetails(id, dto);
   }
 }
