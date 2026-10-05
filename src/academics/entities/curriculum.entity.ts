@@ -9,8 +9,9 @@ export class Curriculum extends BaseEntity {
   @ManyToOne(() => SchoolClass)
   schoolClass: SchoolClass;
 
+  // null = every student in the class takes it.
   @ManyToOne(() => Department, { nullable: true })
-  department: Department;
+  department: Department | null;
 
   @ManyToOne(() => Subject)
   subject: Subject;

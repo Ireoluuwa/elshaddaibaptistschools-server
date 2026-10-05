@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, UseGuards, Query, Param, ParseUUIDPipe } from '@nestjs/common';
 import { AcademicsService } from './academics.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -30,6 +30,12 @@ export class AcademicsController {
   @ResponseMessage('Department created successfully')
   async createDepartment(@Body() body: { name: string }) {
     return this.academicsService.createDepartment(body.name);
+  }
+
+  @Delete('departments/:id')
+  @ResponseMessage('Department removed successfully')
+  async deleteDepartment(@Param('id', ParseUUIDPipe) id: string) {
+    return this.academicsService.deleteDepartment(id);
   }
 
   @Get('departments')

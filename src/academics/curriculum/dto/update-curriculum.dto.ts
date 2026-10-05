@@ -1,5 +1,12 @@
 import { Type } from 'class-transformer';
-import { ArrayMaxSize, IsArray, IsString, IsUUID, MaxLength, ValidateNested } from 'class-validator';
+import {
+  ArrayMaxSize,
+  IsArray,
+  IsString,
+  IsUUID,
+  MaxLength,
+  ValidateNested,
+} from 'class-validator';
 
 export class DepartmentSubjectsDto {
   @IsUUID()

@@ -10,6 +10,8 @@ import { AcademicsService } from './academics.service';
 import { AcademicsController } from './academics.controller';
 import { SessionsController } from './sessions/sessions.controller';
 import { SessionsService } from './sessions/sessions.service';
+import { CurriculumController } from './curriculum/curriculum.controller';
+import { CurriculumService } from './curriculum/curriculum.service';
 
 @Module({
   imports: [
@@ -22,8 +24,8 @@ import { SessionsService } from './sessions/sessions.service';
       Curriculum,
     ]),
   ],
-  controllers: [AcademicsController, SessionsController],
-  providers: [AcademicsService, SessionsService],
+  controllers: [AcademicsController, SessionsController, CurriculumController],
+  providers: [AcademicsService, SessionsService, CurriculumService],
   exports: [AcademicsService],
 })
 export class AcademicsModule {}

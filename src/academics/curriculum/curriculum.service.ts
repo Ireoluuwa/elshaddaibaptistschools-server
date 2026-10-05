@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, ILike, Repository } from 'typeorm';
 import { Curriculum } from '../entities/curriculum.entity';
@@ -24,7 +28,9 @@ export class CurriculumService {
   ) {}
 
   async getSubjectCatalog() {
-    const subjects = await this.subjectRepository.find({ order: { name: 'ASC' } });
+    const subjects = await this.subjectRepository.find({
+      order: { name: 'ASC' },
+    });
     return subjects.map((s) => s.name);
   }
 
@@ -35,7 +41,9 @@ export class CurriculumService {
         where: { schoolClass: { id: classId } },
         relations: ['department', 'subject'],
       }),
-      schoolClass.isSenior ? this.departmentRepository.find({ order: { name: 'ASC' } }) : [],
+      schoolClass.isSenior
+        ? this.departmentRepository.find({ order: { name: 'ASC' } })
+        : [],
     ]);
 
     const subjectsFor = (departmentId: string | null) =>
@@ -49,7 +57,11 @@ export class CurriculumService {
       className: schoolClass.name,
       isSenior: schoolClass.isSenior,
       common: subjectsFor(null),
-      departments: departments.map((d) => ({ id: d.id, name: d.name, subjects: subjectsFor(d.id) })),
+      departments: departments.map((d) => ({
+        id: d.id,
+        name: d.name,
+        subjects: subjectsFor(d.id),
+      })),
     };
   }
 
@@ -65,13 +77,18 @@ export class CurriculumService {
     // A subject everyone takes doesn't also belong under a department.
     const perDepartment = dto.departments.map((d) => ({
       departmentId: d.departmentId,
-      subjects: this.clean(d.subjects).filter((n) => !commonKeys.has(n.toLowerCase())),
+      subjects: this.clean(d.subjects).filter(
+        (n) => !commonKeys.has(n.toLowerCase()),
+      ),
     }));
 
     const departmentIds = perDepartment.map((d) => d.departmentId);
     if (departmentIds.length) {
-      const found = await this.departmentRepository.countBy(departmentIds.map((id) => ({ id })));
-      if (found !== new Set(departmentIds).size) throw new NotFoundException('Department not found');
+      const found = await this.departmentRepository.countBy(
+        departmentIds.map((id) => ({ id })),
+      );
+      if (found !== new Set(departmentIds).size)
+        throw new NotFoundException('Department not found');
     }
 
     await this.dataSource.transaction(async (manager) => {
@@ -79,11 +96,19 @@ export class CurriculumService {
 
       const rows: Partial<Curriculum>[] = [];
       for (const name of common) {
-        rows.push({ schoolClass, department: null as unknown as Department, subject: await this.findOrCreateSubject(manager, name) });
+        rows.push({
+          schoolClass,
+          department: null,
+          subject: await this.findOrCreateSubject(manager, name),
+        });
       }
       for (const { departmentId, subjects } of perDepartment) {
         for (const name of subjects) {
-          rows.push({ schoolClass, department: { id: departmentId } as Department, subject: await this.findOrCreateSubject(manager, name) });
+          rows.push({
+            schoolClass,
+            department: { id: departmentId } as Department,
+            subject: await this.findOrCreateSubject(manager, name),
+          });
         }
       }
       if (rows.length) await manager.save(Curriculum, rows);
@@ -103,12 +128,16 @@ export class CurriculumService {
     const seen = new Set<string>();
     return names
       .map((n) => n.trim().replace(/\s+/g, ' '))
-      .filter((n) => n && !seen.has(n.toLowerCase()) && seen.add(n.toLowerCase()));
+      .filter(
+        (n) => n && !seen.has(n.toLowerCase()) && seen.add(n.toLowerCase()),
+      );
   }
 
   // Matches an existing subject regardless of case, so "english" reuses "English".
   private async findOrCreateSubject(manager: EntityManager, name: string) {
-    const existing = await manager.findOne(Subject, { where: { name: ILike(name) } });
+    const existing = await manager.findOne(Subject, {
+      where: { name: ILike(name) },
+    });
     return existing ?? manager.save(manager.create(Subject, { name }));
   }
 }

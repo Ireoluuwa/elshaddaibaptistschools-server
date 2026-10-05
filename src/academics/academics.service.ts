@@ -8,6 +8,7 @@ import { Term } from './entities/term.entity';
 import { Subject } from './entities/subject.entity';
 import { Curriculum } from './entities/curriculum.entity';
 import { TermStatus } from './enums/term-status.enum';
+import { Student } from '../profile/entities/models/student.entity';
 
 @Injectable()
 export class AcademicsService {
@@ -87,8 +88,8 @@ export class AcademicsService {
   }
 
   async getAllClasses() {
-    return this.classRepository.find({ 
-      select: ['id', 'name'],
+    return this.classRepository.find({
+      select: ['id', 'name', 'isSenior'],
       order: { name: 'ASC' } 
     });
   }
@@ -99,6 +100,23 @@ export class AcademicsService {
 
     const department = this.departmentRepository.create({ name });
     return this.departmentRepository.save(department);
+  }
+
+  async deleteDepartment(id: string) {
+    const department = await this.departmentRepository.findOne({ where: { id } });
+    if (!department) throw new NotFoundException('Department not found');
+
+    const [students, subjects] = await Promise.all([
+      this.departmentRepository.manager.count(Student, { where: { department: { id } } }),
+      this.curriculumRepository.count({ where: { department: { id } } }),
+    ]);
+    if (students || subjects) {
+      throw new ConflictException(
+        `${department.name} is still used by ${students} student(s) and ${subjects} subject(s). Move them first.`,
+      );
+    }
+    await this.departmentRepository.delete(id);
+    return { id };
   }
 
   async getAllDepartments() {
