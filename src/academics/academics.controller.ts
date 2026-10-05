@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Delete, Body, UseGuards, Query, Param, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, UseGuards, Query, Param, ParseUUIDPipe } from '@nestjs/common';
+import { SetNextClassDto } from './dto/set-next-class.dto';
 import { AcademicsService } from './academics.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -17,6 +18,12 @@ export class AcademicsController {
   @ResponseMessage('Class created successfully')
   async createClass(@Body() body: { name: string; isSenior: boolean }) {
     return this.academicsService.createClass(body.name, body.isSenior);
+  }
+
+  @Patch('classes/:id/next-class')
+  @ResponseMessage('Next class updated successfully')
+  async setNextClass(@Param('id', ParseUUIDPipe) id: string, @Body() dto: SetNextClassDto) {
+    return this.academicsService.setNextClass(id, dto.nextClassId);
   }
 
   @Get('classes')

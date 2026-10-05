@@ -13,6 +13,7 @@ import { CreateSessionDto } from './dto/create-session.dto';
 import { CreateTermDto } from './dto/create-term.dto';
 import { UpdateTermDto } from './dto/update-term.dto';
 import { UpdateReportDetailsDto } from './dto/update-report-details.dto';
+import { EnrollmentsService } from '../../enrollments/enrollments.service';
 
 @Injectable()
 export class SessionsService {
@@ -22,6 +23,7 @@ export class SessionsService {
     @InjectRepository(Term)
     private readonly termRepository: Repository<Term>,
     private readonly dataSource: DataSource,
+    private readonly enrollmentsService: EnrollmentsService,
   ) {}
 
   async findAll() {
@@ -125,6 +127,9 @@ export class SessionsService {
       relations: ['academicYear'],
     });
     if (term.status === TermStatus.ACTIVE) return;
+    const previousYear = await manager.findOne(AcademicYear, {
+      where: { isCurrent: true },
+    });
 
     await manager.update(
       Term,
@@ -146,6 +151,19 @@ export class SessionsService {
       { id: term.academicYear.id },
       { isCurrent: true },
     );
+
+    // Moving into a later session applies the promotion decisions (once).
+    if (
+      previousYear &&
+      previousYear.id !== term.academicYear.id &&
+      term.academicYear.name > previousYear.name
+    ) {
+      await this.enrollmentsService.rollOver(
+        manager,
+        previousYear.id,
+        term.academicYear.id,
+      );
+    }
   }
 
   private async findSession(id: string) {

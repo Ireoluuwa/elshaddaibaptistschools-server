@@ -67,7 +67,7 @@ export class EnrollmentsService {
         ...(classId ? { schoolClass: { id: classId } } : {}),
         student: { user: { isActive: true } },
       },
-      relations: ['student', 'student.user', 'schoolClass', 'department'],
+      relations: ['student', 'student.user', 'schoolClass', 'department', 'nextDepartment'],
       order: { student: { lastName: 'ASC', firstName: 'ASC' } },
     });
   }
@@ -97,6 +97,89 @@ export class EnrollmentsService {
     );
   }
 
+  // Moves everyone into the new session using the outcomes decided at promotion.
+  // Runs once: does nothing if the new session already has enrollments.
+  async rollOver(
+    manager: EntityManager,
+    fromYearId: string,
+    toYearId: string,
+  ): Promise<RollOverSummary> {
+    const summary = { promoted: 0, repeated: 0, graduated: 0 };
+    if (
+      await manager.exists(Enrollment, {
+        where: { academicYear: { id: toYearId } },
+      })
+    ) {
+      return summary;
+    }
+
+    const enrollments = await manager.find(Enrollment, {
+      where: { academicYear: { id: fromYearId } },
+      relations: [
+        'student',
+        'student.user',
+        'schoolClass',
+        'schoolClass.nextClass',
+        'department',
+        'nextDepartment',
+      ],
+    });
+
+    for (const e of enrollments) {
+      const { student } = e;
+      if (e.outcome === EnrollmentOutcome.WITHDRAWN || !student.user?.isActive)
+        continue;
+
+      const next = e.schoolClass.nextClass;
+      const graduates =
+        e.outcome === EnrollmentOutcome.GRADUATED ||
+        (e.outcome === EnrollmentOutcome.PROMOTED && !next);
+
+      if (graduates) {
+        // Off every class list; they can still sign in to see past results.
+        await manager.update(
+          Student,
+          { id: student.id },
+          {
+            schoolClass: null as unknown as SchoolClass,
+            department: null as unknown as Department,
+          },
+        );
+        summary.graduated++;
+        continue;
+      }
+
+      // Promoted moves up; repeating or undecided stays in the same class.
+      const promoted = e.outcome === EnrollmentOutcome.PROMOTED && !!next;
+      const schoolClass = promoted ? next : e.schoolClass;
+      const department = schoolClass.isSenior
+        ? (e.nextDepartment ?? e.department)
+        : null;
+
+      await manager.save(
+        manager.create(Enrollment, {
+          student: { id: student.id },
+          academicYear: { id: toYearId },
+          schoolClass: { id: schoolClass.id },
+          department: department ? { id: department.id } : null,
+        }),
+      );
+      await manager.update(
+        Student,
+        { id: student.id },
+        {
+          schoolClass: { id: schoolClass.id },
+          department: department
+            ? { id: department.id }
+            : (null as unknown as Department),
+        },
+      );
+      if (promoted) summary.promoted++;
+      else summary.repeated++;
+    }
+    return summary;
+  }
+
   // Records the student's class for the current session (no-op if no session is current).
   async enrollInCurrentSession(manager: EntityManager, student: Student) {
     const year = await manager.findOne(AcademicYear, {
@@ -117,6 +200,12 @@ export class EnrollmentsService {
       }),
     );
   }
+}
+
+export interface RollOverSummary {
+  promoted: number;
+  repeated: number;
+  graduated: number;
 }
 
 export const placementLabel = ({ schoolClass, department }: Placement) =>

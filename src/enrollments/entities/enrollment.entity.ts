@@ -24,4 +24,8 @@ export class Enrollment extends BaseEntity {
 
   @Column({ type: 'enum', enum: EnrollmentOutcome, nullable: true })
   outcome: EnrollmentOutcome | null;
+
+  // Department for next session, when promoted into a senior class.
+  @ManyToOne(() => Department, { nullable: true })
+  nextDepartment: Department | null;
 }

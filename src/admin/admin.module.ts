@@ -10,6 +10,9 @@ import { Term } from '../academics/entities/term.entity';
 import { SchoolClass } from '../academics/entities/school-class.entity';
 import { AdminResultsController } from './results/admin-results.controller';
 import { AdminResultsService } from './results/admin-results.service';
+import { AdminPromotionsController } from './promotions/admin-promotions.controller';
+import { AdminPromotionsService } from './promotions/admin-promotions.service';
+import { AcademicYear } from '../academics/entities/academic-year.entity';
 import { AdminStudentsController } from './students/admin-students.controller';
 import { AdminStudentsService } from './students/admin-students.service';
 import { UserAccountsService } from './accounts/user-accounts.service';
@@ -18,7 +21,7 @@ import { AdminTeachersService } from './teachers/admin-teachers.service';
 import { AdminBursarsController } from './bursars/admin-bursars.controller';
 import { AdminBursarsService } from './bursars/admin-bursars.service';
 
-// Admin management of user accounts and results.
+// Admin management of user accounts, results and promotion.
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -29,6 +32,7 @@ import { AdminBursarsService } from './bursars/admin-bursars.service';
       TerminalResult,
       Term,
       SchoolClass,
+      AcademicYear,
     ]),
     EnrollmentsModule,
   ],
@@ -37,6 +41,7 @@ import { AdminBursarsService } from './bursars/admin-bursars.service';
     AdminTeachersController,
     AdminBursarsController,
     AdminResultsController,
+    AdminPromotionsController,
   ],
   providers: [
     UserAccountsService,
@@ -44,6 +49,7 @@ import { AdminBursarsService } from './bursars/admin-bursars.service';
     AdminTeachersService,
     AdminBursarsService,
     AdminResultsService,
+    AdminPromotionsService,
   ],
 })
 export class AdminModule {}

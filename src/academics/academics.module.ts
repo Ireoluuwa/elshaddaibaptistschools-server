@@ -12,6 +12,7 @@ import { SessionsController } from './sessions/sessions.controller';
 import { SessionsService } from './sessions/sessions.service';
 import { CurriculumController } from './curriculum/curriculum.controller';
 import { CurriculumService } from './curriculum/curriculum.service';
+import { EnrollmentsModule } from '../enrollments/enrollments.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { CurriculumService } from './curriculum/curriculum.service';
       Subject,
       Curriculum,
     ]),
+    EnrollmentsModule,
   ],
   controllers: [AcademicsController, SessionsController, CurriculumController],
   providers: [AcademicsService, SessionsService, CurriculumService],

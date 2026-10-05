@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { SchoolClass } from './entities/school-class.entity';
@@ -88,10 +88,29 @@ export class AcademicsService {
   }
 
   async getAllClasses() {
-    return this.classRepository.find({
-      select: ['id', 'name', 'isSenior'],
-      order: { name: 'ASC' } 
+    const classes = await this.classRepository.find({
+      relations: ['nextClass'],
+      order: { name: 'ASC' },
     });
+    return classes.map((c) => ({
+      id: c.id,
+      name: c.name,
+      isSenior: c.isSenior,
+      nextClassId: c.nextClass?.id ?? null,
+    }));
+  }
+
+  async setNextClass(id: string, nextClassId: string | null) {
+    const schoolClass = await this.classRepository.findOne({ where: { id } });
+    if (!schoolClass) throw new NotFoundException('Class not found');
+    if (nextClassId === id) throw new BadRequestException('A class cannot lead to itself');
+    if (nextClassId && !(await this.classRepository.exists({ where: { id: nextClassId } }))) {
+      throw new NotFoundException('Next class not found');
+    }
+    await this.classRepository.update(id, {
+      nextClass: nextClassId ? ({ id: nextClassId } as SchoolClass) : null,
+    });
+    return { id, nextClassId };
   }
 
   async createDepartment(name: string) {
