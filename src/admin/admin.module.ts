@@ -5,6 +5,11 @@ import { Student } from '../profile/entities/models/student.entity';
 import { Teacher } from '../profile/entities/models/teacher.entity';
 import { Staff } from '../profile/entities/models/staff.entity';
 import { EnrollmentsModule } from '../enrollments/enrollments.module';
+import { TerminalResult } from '../results/entities/terminal-result.entity';
+import { Term } from '../academics/entities/term.entity';
+import { SchoolClass } from '../academics/entities/school-class.entity';
+import { AdminResultsController } from './results/admin-results.controller';
+import { AdminResultsService } from './results/admin-results.service';
 import { AdminStudentsController } from './students/admin-students.controller';
 import { AdminStudentsService } from './students/admin-students.service';
 import { UserAccountsService } from './accounts/user-accounts.service';
@@ -16,7 +21,15 @@ import { AdminBursarsService } from './bursars/admin-bursars.service';
 // Admin management of every kind of user account.
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Student, Teacher, Staff]),
+    TypeOrmModule.forFeature([
+      User,
+      Student,
+      Teacher,
+      Staff,
+      TerminalResult,
+      Term,
+      SchoolClass,
+    ]),
     EnrollmentsModule,
   ],
   controllers: [

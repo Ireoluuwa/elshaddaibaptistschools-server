@@ -26,6 +26,10 @@ export class TerminalResult extends BaseEntity {
   @Column({ type: 'text', nullable: true })
   teacherRemark: string;
 
+  // Written by the admin (V.P) after reviewing the result.
+  @Column({ type: 'text', nullable: true })
+  vpRemark: string | null;
+
   @Column({
     type: 'enum',
     enum: ResultStatus,

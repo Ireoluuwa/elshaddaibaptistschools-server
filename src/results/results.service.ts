@@ -129,7 +129,7 @@ export class ResultsService {
         departmentId: placement.department?.id || null,
         teacherName: await this.classTeacherName(placement.schoolClass?.id),
       },
-      result: result || null,
+      result: result ? this.forReportSheet(result) : null,
     };
   }
 
@@ -172,7 +172,7 @@ export class ResultsService {
         studentId: student.user?.username || 'N/A',
         teacherName: await this.classTeacherName(placement.schoolClass?.id),
       },
-      result: result || null,
+      result: result ? this.forReportSheet(result) : null,
     };
   }
 
@@ -279,6 +279,25 @@ export class ResultsService {
       .join(' ');
     return name || teacher.user?.username || null;
   }
+  // Groups the term's signature and dates the way the report sheet reads them.
+  private forReportSheet(result: TerminalResult) {
+    const { term } = result;
+    const { signatureUrl, signedDate, vacationDate, resumptionDate } = term;
+    const hasDetails =
+      signatureUrl || signedDate || vacationDate || resumptionDate;
+    return {
+      ...result,
+      term: {
+        id: term.id,
+        name: term.name,
+        academicYear: term.academicYear,
+        reportDetails: hasDetails
+          ? { signatureUrl, signedDate, vacationDate, resumptionDate }
+          : null,
+      },
+    };
+  }
+
   // Removed students can't receive new results or reports.
   private async assertActiveStudent(studentId: string) {
     const student = await this.studentRepository.findOne({

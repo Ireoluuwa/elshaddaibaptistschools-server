@@ -59,6 +59,19 @@ export class EnrollmentsService {
     });
   }
 
+  // Students in a session (optionally one class), leaving out removed accounts.
+  rosterFor(academicYearId: string, classId?: string) {
+    return this.enrollmentRepository.find({
+      where: {
+        academicYear: { id: academicYearId },
+        ...(classId ? { schoolClass: { id: classId } } : {}),
+        student: { user: { isActive: true } },
+      },
+      relations: ['student', 'student.user', 'schoolClass', 'department'],
+      order: { student: { lastName: 'ASC', firstName: 'ASC' } },
+    });
+  }
+
   async graduatedStudentIds() {
     const rows = await this.enrollmentRepository.find({
       where: { outcome: EnrollmentOutcome.GRADUATED },
