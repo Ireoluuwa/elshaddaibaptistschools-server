@@ -8,7 +8,8 @@ import { ResponseMessage } from '../common/decorators/response-message.decorator
 
 @Controller('academics')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.TEACHER)
+// Only admins change the academic structure. Read routes below also allow teachers.
+@Roles(UserRole.ADMIN)
 export class AcademicsController {
   constructor(private readonly academicsService: AcademicsService) {}
 
@@ -19,6 +20,7 @@ export class AcademicsController {
   }
 
   @Get('classes')
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
   @ResponseMessage('Classes retrieved successfully')
   async getAllClasses() {
     return this.academicsService.getAllClasses();
@@ -31,6 +33,7 @@ export class AcademicsController {
   }
 
   @Get('departments')
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
   @ResponseMessage('Departments retrieved successfully')
   async getAllDepartments() {
     return this.academicsService.getAllDepartments();
@@ -64,12 +67,14 @@ export class AcademicsController {
   }
 
   @Get('active-period')
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
   @ResponseMessage('Active period retrieved successfully')
   async getActivePeriod() {
     return this.academicsService.getCurrentTerm();
   }
 
   @Get('all-periods')
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
   @ResponseMessage('All academic periods retrieved successfully')
   async getAllPeriods() {
     return this.academicsService.getAllPeriods();
@@ -100,6 +105,7 @@ export class AcademicsController {
   }
 
   @Get('subjects')
+  @Roles(UserRole.ADMIN, UserRole.TEACHER)
   @ResponseMessage('Mapped subjects retrieved successfully')
   async getMappedSubjects(
     @Query('classId') classId: string,
