@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { randomInt } from 'crypto';
 import { User } from '../../users/entities/user.entity';
 
 // Account actions shared by every role the admin manages.
@@ -11,6 +12,14 @@ export class UserAccountsService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
+
+  // Readable temporary password: no 0/O or 1/l/I, so it survives being read out or texted.
+  generatePassword(length = 10) {
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+    return Array.from({ length }, () => chars[randomInt(chars.length)]).join(
+      '',
+    );
+  }
 
   hashPassword(password: string) {
     return bcrypt.hash(password, 10);
