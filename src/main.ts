@@ -33,9 +33,14 @@ async function bootstrap() {
     }
   });
 
+  // Local development: also accept the app opened via 127.0.0.1 or a home-network IP.
+  const isLocalDevOrigin = (origin: string) =>
+    !process.env.VERCEL &&
+    /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?$/.test(origin);
+
   app.enableCors({
     origin: (origin, callback) => {
-      const isAllowed = !origin || expandedOrigins.some(
+      const isAllowed = !origin || isLocalDevOrigin(origin) || expandedOrigins.some(
         (o) => o.replace(/\/$/, '') === origin.replace(/\/$/, ''),
       );
       if (isAllowed) {

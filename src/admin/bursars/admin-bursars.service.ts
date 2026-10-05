@@ -10,6 +10,10 @@ import { User } from '../../users/entities/user.entity';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { UserAccountsService } from '../accounts/user-accounts.service';
 import { CreateStaffDto } from '../dto/create-staff.dto';
+import { UpdateStaffDto } from '../dto/update-staff.dto';
+
+const cleared = (value: string | null | undefined) =>
+  value === undefined ? undefined : value?.trim() || null;
 
 export type BursarStatus = 'invited' | 'active' | 'removed';
 
@@ -30,6 +34,38 @@ export class AdminBursarsService {
       order: { createdAt: 'ASC' },
     });
     return bursars.map((b) => this.toView(b));
+  }
+
+  async findOne(id: string) {
+    return this.toView(await this.findBursar(id));
+  }
+
+  // Creates the profile if the bursar doesn't have one yet.
+  async update(id: string, dto: UpdateStaffDto) {
+    const bursar = await this.findBursar(id);
+    await this.dataSource.transaction(async (manager) => {
+      if (dto.username !== undefined) {
+        await this.accounts.changeUsername(
+          bursar.id,
+          dto.username.trim(),
+          manager,
+        );
+      }
+      const profile =
+        bursar.staffProfile ??
+        manager.create(Staff, {
+          firstName: bursar.username,
+          lastName: '',
+          user: { id: bursar.id } as User,
+        });
+      if (dto.firstName !== undefined) profile.firstName = dto.firstName.trim();
+      if (dto.lastName !== undefined) profile.lastName = dto.lastName.trim();
+      if (dto.email !== undefined) profile.email = cleared(dto.email) ?? null;
+      if (dto.phoneNumber !== undefined)
+        profile.phoneNumber = cleared(dto.phoneNumber) ?? null;
+      await manager.save(profile);
+    });
+    return this.findOne(id);
   }
 
   // Returns the temporary password once so the admin can share it.

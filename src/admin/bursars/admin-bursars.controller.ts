@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   ParseUUIDPipe,
   Post,
   UseGuards,
@@ -18,6 +19,7 @@ import { UserRole } from '../../common/enums/user-role.enum';
 import { AdminBursarsService } from './admin-bursars.service';
 import { CreateStaffDto } from '../dto/create-staff.dto';
 import { SetPasswordDto } from '../dto/set-password.dto';
+import { UpdateStaffDto } from '../dto/update-staff.dto';
 
 @Controller('admin/bursars')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -29,6 +31,18 @@ export class AdminBursarsController {
   @ResponseMessage('Bursars retrieved successfully')
   findAll() {
     return this.adminBursarsService.findAll();
+  }
+
+  @Get(':id')
+  @ResponseMessage('Bursar retrieved successfully')
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.adminBursarsService.findOne(id);
+  }
+
+  @Patch(':id')
+  @ResponseMessage('Bursar updated successfully')
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateStaffDto) {
+    return this.adminBursarsService.update(id, dto);
   }
 
   @Post()

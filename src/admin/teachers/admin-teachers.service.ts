@@ -12,6 +12,10 @@ import { Assignment } from '../../assignments/entities/assignment.entity';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { UserAccountsService } from '../accounts/user-accounts.service';
 import { CreateStaffDto } from '../dto/create-staff.dto';
+import { UpdateStaffDto } from '../dto/update-staff.dto';
+
+const cleared = (value: string | null | undefined) =>
+  value === undefined ? undefined : value?.trim() || null;
 
 @Injectable()
 export class AdminTeachersService {
@@ -28,6 +32,38 @@ export class AdminTeachersService {
       order: { firstName: 'ASC', lastName: 'ASC' },
     });
     return teachers.map((t) => this.toView(t));
+  }
+
+  async findOne(id: string) {
+    return this.toView(await this.findTeacher(id));
+  }
+
+  async update(id: string, dto: UpdateStaffDto) {
+    const teacher = await this.findTeacher(id);
+    await this.dataSource.transaction(async (manager) => {
+      if (dto.username !== undefined) {
+        await this.accounts.changeUsername(
+          teacher.user.id,
+          dto.username.trim(),
+          manager,
+        );
+      }
+      const changes = {
+        firstName: dto.firstName?.trim(),
+        lastName: dto.lastName?.trim(),
+        email: cleared(dto.email),
+        phoneNumber: cleared(dto.phoneNumber),
+        address: cleared(dto.address),
+      };
+      await manager.update(
+        Teacher,
+        { id },
+        Object.fromEntries(
+          Object.entries(changes).filter(([, v]) => v !== undefined),
+        ),
+      );
+    });
+    return this.findOne(id);
   }
 
   // Returns the temporary password once so the admin can share it.
@@ -135,6 +171,8 @@ export class AdminTeachersService {
       lastName: t.lastName ?? '',
       email: t.email || null,
       phoneNumber: t.phoneNumber || null,
+      address: t.address || null,
+      avatarUrl: t.avatarUrl || null,
       classId: t.schoolClass?.id ?? null,
       className: t.schoolClass?.name ?? null,
       isActive: t.user.isActive,

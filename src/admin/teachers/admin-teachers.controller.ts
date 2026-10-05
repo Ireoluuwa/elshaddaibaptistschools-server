@@ -19,6 +19,7 @@ import { UserRole } from '../../common/enums/user-role.enum';
 import { AdminTeachersService } from './admin-teachers.service';
 import { CreateStaffDto } from '../dto/create-staff.dto';
 import { SetPasswordDto } from '../dto/set-password.dto';
+import { UpdateStaffDto } from '../dto/update-staff.dto';
 import { AssignClassDto } from './dto/assign-class.dto';
 
 @Controller('admin/teachers')
@@ -31,6 +32,18 @@ export class AdminTeachersController {
   @ResponseMessage('Teachers retrieved successfully')
   findAll() {
     return this.adminTeachersService.findAll();
+  }
+
+  @Get(':id')
+  @ResponseMessage('Teacher retrieved successfully')
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.adminTeachersService.findOne(id);
+  }
+
+  @Patch(':id')
+  @ResponseMessage('Teacher updated successfully')
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateStaffDto) {
+    return this.adminTeachersService.update(id, dto);
   }
 
   @Post()

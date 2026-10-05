@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -39,6 +43,20 @@ export class UserAccountsService {
       { id: userId },
       { isActive },
     );
+  }
+
+  async changeUsername(
+    userId: string,
+    username: string,
+    manager?: EntityManager,
+  ) {
+    const repo = (manager ?? this.userRepository.manager).getRepository(User);
+    const taken = await repo.exists({ where: { username } });
+    const current = await repo.findOne({ where: { id: userId } });
+    if (taken && current?.username !== username) {
+      throw new ConflictException(`Username ${username} is already in use`);
+    }
+    await repo.update(userId, { username });
   }
 
   async usernameTaken(username: string) {
