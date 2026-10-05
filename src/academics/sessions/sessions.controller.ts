@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -53,12 +55,14 @@ export class SessionsController {
   }
 
   @Post('terms/:id/activate')
+  @HttpCode(HttpStatus.OK)
   @ResponseMessage('Term activated successfully')
   activate(@Param('id', ParseUUIDPipe) id: string) {
     return this.sessionsService.activateTerm(id);
   }
 
   @Post('terms/:id/close')
+  @HttpCode(HttpStatus.OK)
   @ResponseMessage('Term closed successfully')
   close(@Param('id', ParseUUIDPipe) id: string) {
     return this.sessionsService.closeTerm(id);
