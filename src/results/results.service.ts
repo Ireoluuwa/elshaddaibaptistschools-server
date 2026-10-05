@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TerminalResult } from './entities/terminal-result.entity';
@@ -8,7 +13,10 @@ import { AcademicsService } from '../academics/academics.service';
 import { UpsertResultDto } from './dto/upsert-result.dto';
 import { BulkUpsertResultDto } from './dto/bulk-upsert-result.dto';
 import { ResultStatus } from './enums/result-status.enum';
-import { EnrollmentsService, placementLabel } from '../enrollments/enrollments.service';
+import {
+  EnrollmentsService,
+  placementLabel,
+} from '../enrollments/enrollments.service';
 
 @Injectable()
 export class ResultsService {
@@ -27,6 +35,7 @@ export class ResultsService {
     const { studentId, termId, ...resultData } = dto;
 
     const term = await this.academicsService.findOpenTermOrFail(termId);
+    await this.assertActiveStudent(studentId);
 
     const existing = await this.resultRepository.findOne({
       where: { student: { id: studentId }, term: { id: termId } },
@@ -37,7 +46,9 @@ export class ResultsService {
       return this.resultRepository.save(existing);
     }
 
-    const student = await this.studentRepository.findOne({ where: { id: studentId } });
+    const student = await this.studentRepository.findOne({
+      where: { id: studentId },
+    });
     if (!student) throw new NotFoundException('Student not found');
 
     const result = this.resultRepository.create({
@@ -62,7 +73,10 @@ export class ResultsService {
     const active = await this.academicsService.getCurrentTerm();
 
     const students = await this.studentRepository.find({
-      where: { schoolClass: { id: teacher.schoolClass.id } },
+      where: {
+        schoolClass: { id: teacher.schoolClass.id },
+        user: { isActive: true },
+      },
       order: { firstName: 'ASC' },
       relations: ['user'],
     });
@@ -95,13 +109,15 @@ export class ResultsService {
 
     if (!student) throw new NotFoundException('Student not found');
 
-  
     const result = await this.resultRepository.findOne({
       where: { student: { id: studentId }, term: { id: termId } },
       relations: ['term', 'term.academicYear'],
     });
 
-    const placement = await this.enrollmentsService.placementForTerm(student, termId);
+    const placement = await this.enrollmentsService.placementForTerm(
+      student,
+      termId,
+    );
 
     return {
       student: {
@@ -129,7 +145,8 @@ export class ResultsService {
     const periods = await this.academicsService.getAllPeriods();
     const targetTermId = termId || active?.id;
 
-    if (!targetTermId) return { periods, activeTermId: null, result: null, student: null };
+    if (!targetTermId)
+      return { periods, activeTermId: null, result: null, student: null };
 
     const result = await this.resultRepository.findOne({
       where: {
@@ -140,7 +157,10 @@ export class ResultsService {
       relations: ['term', 'term.academicYear'],
     });
 
-    const placement = await this.enrollmentsService.placementForTerm(student, targetTermId);
+    const placement = await this.enrollmentsService.placementForTerm(
+      student,
+      targetTermId,
+    );
 
     return {
       periods,
@@ -173,7 +193,12 @@ export class ResultsService {
   }
 
   async bulkUpsertResults(dto: BulkUpsertResultDto) {
-    const errors: { studentId: string; studentName: string; subjectName: string; expected: string }[] = [];
+    const errors: {
+      studentId: string;
+      studentName: string;
+      subjectName: string;
+      expected: string;
+    }[] = [];
 
     for (const termId of new Set(dto.results.map((r) => r.termId))) {
       await this.academicsService.findOpenTermOrFail(termId);
@@ -183,27 +208,40 @@ export class ResultsService {
     for (const entry of dto.results) {
       const student = await this.studentRepository.findOne({
         where: { id: entry.studentId },
-        relations: ['schoolClass', 'department'],
+        relations: ['schoolClass', 'department', 'user'],
       });
 
       if (!student) {
-        throw new NotFoundException(`Student with id ${entry.studentId} not found`);
+        throw new NotFoundException(
+          `Student with id ${entry.studentId} not found`,
+        );
+      }
+      if (!student.user?.isActive) {
+        throw new ForbiddenException(
+          `${student.firstName} ${student.lastName} has been removed by the admin. Take them out of the upload and try again.`,
+        );
       }
 
-      const placement = await this.enrollmentsService.placementForTerm(student, entry.termId);
+      const placement = await this.enrollmentsService.placementForTerm(
+        student,
+        entry.termId,
+      );
       const curriculumSubjects = await this.academicsService.getMappedSubjects(
         placement.schoolClass?.id as string,
         placement.department?.id || null,
       );
 
-      const subjectNames = curriculumSubjects.map((s) => s.name.toLowerCase().trim());
+      const subjectNames = curriculumSubjects.map((s) =>
+        s.name.toLowerCase().trim(),
+      );
 
       for (const score of entry.scores) {
         const normalized = score.subjectName.toLowerCase().trim();
         if (!subjectNames.includes(normalized)) {
-          const closest = curriculumSubjects.find((s) =>
-            s.name.toLowerCase().includes(normalized) ||
-            normalized.includes(s.name.toLowerCase()),
+          const closest = curriculumSubjects.find(
+            (s) =>
+              s.name.toLowerCase().includes(normalized) ||
+              normalized.includes(s.name.toLowerCase()),
           );
           errors.push({
             studentId: student.id,
@@ -222,7 +260,9 @@ export class ResultsService {
       });
     }
 
-    const saved = await Promise.all(dto.results.map((entry) => this.upsertResult(entry)));
+    const saved = await Promise.all(
+      dto.results.map((entry) => this.upsertResult(entry)),
+    );
 
     return { saved: saved.length };
   }
@@ -234,7 +274,22 @@ export class ResultsService {
       relations: ['user'],
     });
     if (!teacher) return null;
-    const name = [teacher.firstName, teacher.lastName].filter((n) => n?.trim()).join(' ');
+    const name = [teacher.firstName, teacher.lastName]
+      .filter((n) => n?.trim())
+      .join(' ');
     return name || teacher.user?.username || null;
+  }
+  // Removed students can't receive new results or reports.
+  private async assertActiveStudent(studentId: string) {
+    const student = await this.studentRepository.findOne({
+      where: { id: studentId },
+      relations: ['user'],
+    });
+    if (!student) throw new NotFoundException('Student not found');
+    if (!student.user?.isActive) {
+      throw new ForbiddenException(
+        'This student has been removed by the admin.',
+      );
+    }
   }
 }

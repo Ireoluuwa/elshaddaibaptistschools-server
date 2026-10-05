@@ -12,6 +12,7 @@ import { ResultsModule } from './results/results.module';
 import { AssignmentsModule } from './assignments/assignments.module';
 import { StudentModule } from './student/student.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { EnrollmentsModule } from './enrollments/enrollments.module';
     AssignmentsModule,
     StudentModule,
     EnrollmentsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],

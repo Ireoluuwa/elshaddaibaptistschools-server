@@ -68,6 +68,22 @@ export class EnrollmentsService {
     return new Set(rows.map((r) => r.student.id));
   }
 
+  async setCurrentOutcome(
+    manager: EntityManager,
+    studentId: string,
+    outcome: EnrollmentOutcome | null,
+  ) {
+    const year = await manager.findOne(AcademicYear, {
+      where: { isCurrent: true },
+    });
+    if (!year) return;
+    await manager.update(
+      Enrollment,
+      { student: { id: studentId }, academicYear: { id: year.id } },
+      { outcome },
+    );
+  }
+
   // Records the student's class for the current session (no-op if no session is current).
   async enrollInCurrentSession(manager: EntityManager, student: Student) {
     const year = await manager.findOne(AcademicYear, {

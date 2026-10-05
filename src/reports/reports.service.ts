@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { WeeklyReport } from './entities/weekly-report.entity';
@@ -7,7 +11,10 @@ import { Teacher } from '../profile/entities/models/teacher.entity';
 import { AcademicsService } from '../academics/academics.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { ReportStatus } from './enums/report-status.enum';
-import { EnrollmentsService, placementLabel } from '../enrollments/enrollments.service';
+import {
+  EnrollmentsService,
+  placementLabel,
+} from '../enrollments/enrollments.service';
 
 @Injectable()
 export class ReportsService {
@@ -26,6 +33,7 @@ export class ReportsService {
     const { studentId, termId, weekNumber, ...reportData } = dto;
 
     const term = await this.academicsService.findOpenTermOrFail(termId);
+    await this.assertActiveStudent(studentId);
 
     // Check if report already exists for this student/term/week
     let report: WeeklyReport;
@@ -43,7 +51,9 @@ export class ReportsService {
       Object.assign(report, reportData);
     } else {
       // Create new
-      const student = await this.studentRepository.findOne({ where: { id: studentId } });
+      const student = await this.studentRepository.findOne({
+        where: { id: studentId },
+      });
 
       report = this.reportRepository.create({
         student: student || undefined,
@@ -57,7 +67,6 @@ export class ReportsService {
   }
 
   async getDashboardInit(userId: string) {
-  
     const teacher = await this.teacherRepository.findOne({
       where: { user: { id: userId } },
       relations: ['schoolClass'],
@@ -67,17 +76,17 @@ export class ReportsService {
       throw new NotFoundException('Teacher or assigned class not found');
     }
 
-
     const active = await this.academicsService.getCurrentTerm();
 
-
     const students = await this.studentRepository.find({
-      where: { schoolClass: { id: teacher.schoolClass.id } },
+      where: {
+        schoolClass: { id: teacher.schoolClass.id },
+        user: { isActive: true },
+      },
       order: { firstName: 'ASC' },
       relations: ['user'],
     });
 
-   
     const periods = await this.academicsService.getAllPeriods();
 
     return {
@@ -131,7 +140,10 @@ export class ReportsService {
 
     // Get data for the current week report if it exists
     const activeReport = reports.find((r) => r.weekNumber === currentWeek);
-    const placement = await this.enrollmentsService.placementForTerm(student, termId);
+    const placement = await this.enrollmentsService.placementForTerm(
+      student,
+      termId,
+    );
 
     return {
       student: {
@@ -175,10 +187,13 @@ export class ReportsService {
       order: { weekNumber: 'ASC' },
     });
 
-    const reportMap = reports.reduce((acc, r) => {
-      acc[r.weekNumber] = r.id;
-      return acc;
-    }, {} as Record<number, string>);
+    const reportMap = reports.reduce(
+      (acc, r) => {
+        acc[r.weekNumber] = r.id;
+        return acc;
+      },
+      {} as Record<number, string>,
+    );
 
     const timeline: any[] = [];
     for (let i = 1; i <= 12; i++) {
@@ -195,5 +210,18 @@ export class ReportsService {
       selectedTermId: targetTermId,
       timeline,
     };
+  }
+  // Removed students can't receive new results or reports.
+  private async assertActiveStudent(studentId: string) {
+    const student = await this.studentRepository.findOne({
+      where: { id: studentId },
+      relations: ['user'],
+    });
+    if (!student) throw new NotFoundException('Student not found');
+    if (!student.user?.isActive) {
+      throw new ForbiddenException(
+        'This student has been removed by the admin.',
+      );
+    }
   }
 }
