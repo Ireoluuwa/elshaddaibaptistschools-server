@@ -30,12 +30,14 @@ Keep this file until the release has run for a full term. To roll back: `pg_rest
 The live database was created before migrations existed, so its tables should already match the first migration. Confirm that before telling TypeORM to skip it:
 
 ```bash
+# Build a scratch database that has only InitialSchema applied
 createdb schema_check
-DATABASE_URL=postgres://localhost:5432/schema_check npx typeorm-ts-node-commonjs -d src/database/data-source.ts migration:run -t each
-# Stop after InitialSchema: revert everything after it
-for i in $(seq 8); do DATABASE_URL=postgres://localhost:5432/schema_check npm run migration:revert; done
+export CHECK_URL=postgres://localhost:5432/schema_check
+psql "$CHECK_URL" -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"'
+DATABASE_URL="$CHECK_URL" npm run migration:run
+for i in $(seq 8); do DATABASE_URL="$CHECK_URL" npm run migration:revert; done
 
-pg_dump --schema-only --no-owner --no-acl postgres://localhost:5432/schema_check -n public > /tmp/expected.sql
+pg_dump --schema-only --no-owner --no-acl "$CHECK_URL" -n public > /tmp/expected.sql
 pg_dump --schema-only --no-owner --no-acl "$LIVE_URL" -n public > /tmp/live.sql
 diff <(grep -E '^(CREATE|ALTER|    ")' /tmp/expected.sql | sort) <(grep -E '^(CREATE|ALTER|    ")' /tmp/live.sql | sort)
 dropdb schema_check

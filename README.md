@@ -80,6 +80,17 @@ $ npm run migration:revert   # undo the most recent migration
 
 Always back up the production database before running migrations against it.
 
+### End-to-end tests
+
+```bash
+$ createdb elshaddai_test   # once
+$ npm run test:e2e
+```
+
+The tests wipe and rebuild `elshaddai_test` from the migrations on every run (they refuse any other database). They cover the closed-term lock, the fee hold and the promotion rollover.
+
+For going live, see [GO-LIVE.md](GO-LIVE.md).
+
 ## Core Architecture Highlights
 
 ### Transactional Safety
