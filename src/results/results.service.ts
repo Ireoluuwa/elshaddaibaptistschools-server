@@ -8,6 +8,7 @@ import { AcademicsService } from '../academics/academics.service';
 import { UpsertResultDto } from './dto/upsert-result.dto';
 import { BulkUpsertResultDto } from './dto/bulk-upsert-result.dto';
 import { ResultStatus } from './enums/result-status.enum';
+import { EnrollmentsService, placementLabel } from '../enrollments/enrollments.service';
 
 @Injectable()
 export class ResultsService {
@@ -19,6 +20,7 @@ export class ResultsService {
     @InjectRepository(Teacher)
     private readonly teacherRepository: Repository<Teacher>,
     private readonly academicsService: AcademicsService,
+    private readonly enrollmentsService: EnrollmentsService,
   ) {}
 
   async upsertResult(dto: UpsertResultDto) {
@@ -99,28 +101,17 @@ export class ResultsService {
       relations: ['term', 'term.academicYear'],
     });
 
-    const classTeacher = student.schoolClass?.id
-      ? await this.teacherRepository.findOne({
-          where: { schoolClass: { id: student.schoolClass.id } },
-          relations: ['user'],
-        })
-      : null;
-
-    const teacherName = classTeacher
-      ? [classTeacher.firstName, classTeacher.lastName]
-          .filter((n) => n && n.trim())
-          .join(' ') || classTeacher.user?.username || null
-      : null;
+    const placement = await this.enrollmentsService.placementForTerm(student, termId);
 
     return {
       student: {
         id: student.id,
         name: `${student.firstName} ${student.lastName}`,
-        class: `${student.schoolClass?.name || ''} ${student.department?.name || ''}`.trim(),
+        class: placementLabel(placement),
         studentId: student.user?.username || 'N/A',
-        classId: student.schoolClass?.id || null,
-        departmentId: student.department?.id || null,
-        teacherName,
+        classId: placement.schoolClass?.id || null,
+        departmentId: placement.department?.id || null,
+        teacherName: await this.classTeacherName(placement.schoolClass?.id),
       },
       result: result || null,
     };
@@ -149,18 +140,7 @@ export class ResultsService {
       relations: ['term', 'term.academicYear'],
     });
 
-    const classTeacher = student.schoolClass?.id
-      ? await this.teacherRepository.findOne({
-          where: { schoolClass: { id: student.schoolClass.id } },
-          relations: ['schoolClass', 'user'],
-        })
-      : null;
-
-    const teacherName = classTeacher
-      ? [classTeacher.firstName, classTeacher.lastName]
-          .filter((n) => n && n.trim())
-          .join(' ') || classTeacher.user?.username || null
-      : null;
+    const placement = await this.enrollmentsService.placementForTerm(student, targetTermId);
 
     return {
       periods,
@@ -168,9 +148,9 @@ export class ResultsService {
       selectedTermId: targetTermId,
       student: {
         name: [student.firstName, student.lastName].filter(Boolean).join(' '),
-        class: `${student.schoolClass?.name || ''} ${student.department?.name || ''}`.trim(),
+        class: placementLabel(placement),
         studentId: student.user?.username || 'N/A',
-        teacherName,
+        teacherName: await this.classTeacherName(placement.schoolClass?.id),
       },
       result: result || null,
     };
@@ -210,9 +190,10 @@ export class ResultsService {
         throw new NotFoundException(`Student with id ${entry.studentId} not found`);
       }
 
+      const placement = await this.enrollmentsService.placementForTerm(student, entry.termId);
       const curriculumSubjects = await this.academicsService.getMappedSubjects(
-        student.schoolClass?.id,
-        student.department?.id || null,
+        placement.schoolClass?.id as string,
+        placement.department?.id || null,
       );
 
       const subjectNames = curriculumSubjects.map((s) => s.name.toLowerCase().trim());
@@ -244,5 +225,16 @@ export class ResultsService {
     const saved = await Promise.all(dto.results.map((entry) => this.upsertResult(entry)));
 
     return { saved: saved.length };
+  }
+
+  private async classTeacherName(classId?: string) {
+    if (!classId) return null;
+    const teacher = await this.teacherRepository.findOne({
+      where: { schoolClass: { id: classId } },
+      relations: ['user'],
+    });
+    if (!teacher) return null;
+    const name = [teacher.firstName, teacher.lastName].filter((n) => n?.trim()).join(' ');
+    return name || teacher.user?.username || null;
   }
 }

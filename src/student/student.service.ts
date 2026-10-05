@@ -12,6 +12,7 @@ import { CreateStudentDto } from './dto/create-student.dto';
 import { UserRole } from '../common/enums/user-role.enum';
 import * as bcrypt from 'bcrypt';
 import * as Papa from 'papaparse';
+import { EnrollmentsService } from '../enrollments/enrollments.service';
 
 @Injectable()
 export class StudentService {
@@ -29,6 +30,7 @@ export class StudentService {
     @InjectRepository(Department)
     private readonly departmentRepository: Repository<Department>,
     private readonly dataSource: DataSource,
+    private readonly enrollmentsService: EnrollmentsService,
   ) {}
 
   async getDashboard(userId: string) {
@@ -116,28 +118,33 @@ export class StudentService {
     const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
  
-    const user = this.userRepository.create({
-      username: dto.username,
-      password: hashedPassword,
-      role: UserRole.STUDENT,
-    });
-    const savedUser = await this.userRepository.save(user);
+    return this.dataSource.transaction(async (manager) => {
+      const savedUser = await manager.save(
+        manager.create(User, {
+          username: dto.username,
+          password: hashedPassword,
+          role: UserRole.STUDENT,
+        }),
+      );
 
-    
-    const student = this.studentRepository.create({
-      firstName: dto.firstName,
-      lastName: dto.lastName,
-      schoolClass,
-      department: department || undefined,
-      user: savedUser,
-      dateOfBirth: '2000-01-01', 
-      yearJoined: new Date().getFullYear(),
-      homeAddress: 'TBD',
-      guardianName: 'TBD',
-      guardianPhone: 'TBD',
-    });
+      const student = await manager.save(
+        manager.create(Student, {
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+          schoolClass,
+          department: department || undefined,
+          user: savedUser,
+          dateOfBirth: '2000-01-01',
+          yearJoined: new Date().getFullYear(),
+          homeAddress: 'TBD',
+          guardianName: 'TBD',
+          guardianPhone: 'TBD',
+        }),
+      );
 
-    return this.studentRepository.save(student);
+      await this.enrollmentsService.enrollInCurrentSession(manager, student);
+      return student;
+    });
   }
 
   async batchEnrollStudents(fileBuffer: Buffer) {
@@ -217,6 +224,7 @@ export class StudentService {
           guardianPhone: 'TBD',
         });
         await queryRunner.manager.save(student);
+        await this.enrollmentsService.enrollInCurrentSession(queryRunner.manager, student);
 
         enrolledCount++;
       }

@@ -7,6 +7,7 @@ import { Teacher } from '../profile/entities/models/teacher.entity';
 import { AcademicsService } from '../academics/academics.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { ReportStatus } from './enums/report-status.enum';
+import { EnrollmentsService, placementLabel } from '../enrollments/enrollments.service';
 
 @Injectable()
 export class ReportsService {
@@ -18,6 +19,7 @@ export class ReportsService {
     @InjectRepository(Teacher)
     private readonly teacherRepository: Repository<Teacher>,
     private readonly academicsService: AcademicsService,
+    private readonly enrollmentsService: EnrollmentsService,
   ) {}
 
   async submitReport(dto: CreateReportDto) {
@@ -129,15 +131,16 @@ export class ReportsService {
 
     // Get data for the current week report if it exists
     const activeReport = reports.find((r) => r.weekNumber === currentWeek);
+    const placement = await this.enrollmentsService.placementForTerm(student, termId);
 
     return {
       student: {
         id: student.id,
         name: `${student.firstName} ${student.lastName}`,
-        class: `${student.schoolClass?.name || ''} ${student.department?.name || ''}`.trim(),
+        class: placementLabel(placement),
         studentId: student.user?.username || 'N/A',
-        classId: student.schoolClass?.id || null,
-        departmentId: student.department?.id || null,
+        classId: placement.schoolClass?.id || null,
+        departmentId: placement.department?.id || null,
       },
       timeline,
       activeReport: activeReport || null,

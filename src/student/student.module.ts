@@ -8,9 +8,13 @@ import { WeeklyReport } from '../reports/entities/weekly-report.entity';
 import { User } from '../users/entities/user.entity';
 import { SchoolClass } from '../academics/entities/school-class.entity';
 import { Department } from '../academics/entities/department.entity';
+import { EnrollmentsModule } from '../enrollments/enrollments.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Student, Assignment, WeeklyReport, User, SchoolClass, Department])],
+  imports: [
+    TypeOrmModule.forFeature([Student, Assignment, WeeklyReport, User, SchoolClass, Department]),
+    EnrollmentsModule,
+  ],
   controllers: [StudentController],
   providers: [StudentService],
 })
