@@ -11,6 +11,7 @@ import { ReportsModule } from './reports/reports.module';
 import { ResultsModule } from './results/results.module';
 import { AssignmentsModule } from './assignments/assignments.module';
 import { StudentModule } from './student/student.module';
+import { EnrollmentsModule } from './enrollments/enrollments.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { StudentModule } from './student/student.module';
     ResultsModule,
     AssignmentsModule,
     StudentModule,
+    EnrollmentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
