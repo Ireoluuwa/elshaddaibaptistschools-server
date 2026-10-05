@@ -25,9 +25,17 @@ export async function resetDatabase() {
 
 // Same setup as main.ts.
 export async function createApp() {
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+  const moduleRef = await Test.createTestingModule({
+    imports: [AppModule],
+  }).compile();
   const app = moduleRef.createNestApplication();
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
   app.setGlobalPrefix('api');
   app.useGlobalInterceptors(new TransformInterceptor(new Reflector()));
   await app.init();
@@ -45,22 +53,44 @@ export interface Fixtures {
 export async function seed(app: INestApplication): Promise<Fixtures> {
   const db = app.get(DataSource);
   const hash = await bcrypt.hash(PASSWORD, 4);
-  const one = async (sql: string, params: unknown[] = []) => (await db.query(sql, params))[0];
+  const one = async (sql: string, params: unknown[] = []) =>
+    (await db.query(sql, params))[0];
 
   const classes: Record<string, string> = {};
-  for (const [name, senior] of [['JSS1', false], ['JSS2', false], ['JSS3', false], ['SS1', true], ['SS2', true], ['SS3', true]] as const) {
-    classes[name] = (await one(`INSERT INTO school_classes (name, "isSenior") VALUES ($1, $2) RETURNING id`, [name, senior])).id;
+  for (const [name, senior] of [
+    ['JSS1', false],
+    ['JSS2', false],
+    ['JSS3', false],
+    ['SS1', true],
+    ['SS2', true],
+    ['SS3', true],
+  ] as const) {
+    classes[name] = (
+      await one(
+        `INSERT INTO school_classes (name, "isSenior") VALUES ($1, $2) RETURNING id`,
+        [name, senior],
+      )
+    ).id;
   }
   const chain = ['JSS1', 'JSS2', 'JSS3', 'SS1', 'SS2', 'SS3'];
   for (let i = 0; i < chain.length - 1; i++) {
-    await db.query(`UPDATE school_classes SET "nextClassId" = $1 WHERE id = $2`, [classes[chain[i + 1]], classes[chain[i]]]);
+    await db.query(
+      `UPDATE school_classes SET "nextClassId" = $1 WHERE id = $2`,
+      [classes[chain[i + 1]], classes[chain[i]]],
+    );
   }
   const departments: Record<string, string> = {};
   for (const name of ['Science', 'Art']) {
-    departments[name] = (await one(`INSERT INTO departments (name) VALUES ($1) RETURNING id`, [name])).id;
+    departments[name] = (
+      await one(`INSERT INTO departments (name) VALUES ($1) RETURNING id`, [
+        name,
+      ])
+    ).id;
   }
 
-  const year = await one(`INSERT INTO academic_years (name, "isCurrent") VALUES ('2026/2027', true) RETURNING id`);
+  const year = await one(
+    `INSERT INTO academic_years (name, "isCurrent") VALUES ('2026/2027', true) RETURNING id`,
+  );
   const term = await one(
     `INSERT INTO terms (name, "startDate", "endDate", status, "isCurrent", "academicYearId")
      VALUES ('1st Term', '2026-09-14', '2026-12-18', 'active', true, $1) RETURNING id`,
@@ -68,7 +98,12 @@ export async function seed(app: INestApplication): Promise<Fixtures> {
   );
 
   const user = async (username: string, role: string) =>
-    (await one(`INSERT INTO users (username, password, role) VALUES ($1, $2, $3) RETURNING id`, [username, hash, role])).id;
+    (
+      await one(
+        `INSERT INTO users (username, password, role) VALUES ($1, $2, $3) RETURNING id`,
+        [username, hash, role],
+      )
+    ).id;
 
   await user('admin', 'admin');
   await user('bursar', 'bursar');
@@ -104,11 +139,17 @@ export async function seed(app: INestApplication): Promise<Fixtures> {
 }
 
 export async function login(app: INestApplication, username: string) {
-  const res = await request(app.getHttpServer()).post('/api/auth/login').send({ username, password: PASSWORD });
+  const res = await request(app.getHttpServer())
+    .post('/api/auth/login')
+    .send({ username, password: PASSWORD });
   return `Bearer ${res.body.data.access_token as string}`;
 }
 
-export const resultBody = (studentId: string, termId: string, status = 'PUBLISHED') => ({
+export const resultBody = (
+  studentId: string,
+  termId: string,
+  status = 'PUBLISHED',
+) => ({
   studentId,
   termId,
   scores: [{ subjectName: 'Mathematics', test1: 10, test2: 11, exam: 50 }],
