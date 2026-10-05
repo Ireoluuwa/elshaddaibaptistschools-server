@@ -18,7 +18,7 @@ import { AdminTeachersService } from './teachers/admin-teachers.service';
 import { AdminBursarsController } from './bursars/admin-bursars.controller';
 import { AdminBursarsService } from './bursars/admin-bursars.service';
 
-// Admin management of every kind of user account.
+// Admin management of user accounts and results.
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -36,12 +36,14 @@ import { AdminBursarsService } from './bursars/admin-bursars.service';
     AdminStudentsController,
     AdminTeachersController,
     AdminBursarsController,
+    AdminResultsController,
   ],
   providers: [
     UserAccountsService,
     AdminStudentsService,
     AdminTeachersService,
     AdminBursarsService,
+    AdminResultsService,
   ],
 })
 export class AdminModule {}
