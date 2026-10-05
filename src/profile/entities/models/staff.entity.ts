@@ -11,10 +11,10 @@ export class Staff extends BaseEntity {
   @Column()
   lastName: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   email: string | null;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   phoneNumber: string | null;
 
   @OneToOne(() => User, (user) => user.staffProfile, { onDelete: 'CASCADE' })
