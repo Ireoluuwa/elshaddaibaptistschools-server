@@ -7,6 +7,7 @@ import { Term } from '../academics/entities/term.entity';
 import { Student } from '../profile/entities/models/student.entity';
 import { SchoolClass } from '../academics/entities/school-class.entity';
 import { Department } from '../academics/entities/department.entity';
+import { EnrollmentOutcome } from './enums/enrollment-outcome.enum';
 
 export interface Placement {
   schoolClass: SchoolClass | null;
@@ -47,6 +48,24 @@ export class EnrollmentsService {
           schoolClass: student.schoolClass ?? null,
           department: student.department ?? null,
         };
+  }
+
+  // Newest session first.
+  historyFor(studentId: string) {
+    return this.enrollmentRepository.find({
+      where: { student: { id: studentId } },
+      relations: ['academicYear', 'schoolClass', 'department'],
+      order: { academicYear: { name: 'DESC' } },
+    });
+  }
+
+  async graduatedStudentIds() {
+    const rows = await this.enrollmentRepository.find({
+      where: { outcome: EnrollmentOutcome.GRADUATED },
+      relations: ['student'],
+      select: { id: true, student: { id: true } },
+    });
+    return new Set(rows.map((r) => r.student.id));
   }
 
   // Records the student's class for the current session (no-op if no session is current).

@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { StudentController } from './student.controller';
 import { StudentService } from './student.service';
+import { AdminStudentsController } from './admin-students.controller';
+import { AdminStudentsService } from './admin-students.service';
 import { Student } from '../profile/entities/models/student.entity';
 import { Assignment } from '../assignments/entities/assignment.entity';
 import { WeeklyReport } from '../reports/entities/weekly-report.entity';
@@ -15,7 +17,7 @@ import { EnrollmentsModule } from '../enrollments/enrollments.module';
     TypeOrmModule.forFeature([Student, Assignment, WeeklyReport, User, SchoolClass, Department]),
     EnrollmentsModule,
   ],
-  controllers: [StudentController],
-  providers: [StudentService],
+  controllers: [StudentController, AdminStudentsController],
+  providers: [StudentService, AdminStudentsService],
 })
 export class StudentModule {}
