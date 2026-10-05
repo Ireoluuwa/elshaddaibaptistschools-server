@@ -1,6 +1,15 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThanOrEqual, DataSource, EntityManager } from 'typeorm';
+import {
+  Repository,
+  MoreThanOrEqual,
+  DataSource,
+  EntityManager,
+} from 'typeorm';
 import { Assignment } from '../assignments/entities/assignment.entity';
 import { WeeklyReport } from '../reports/entities/weekly-report.entity';
 import { Student } from '../profile/entities/models/student.entity';
@@ -13,9 +22,10 @@ import { UserRole } from '../common/enums/user-role.enum';
 import * as bcrypt from 'bcrypt';
 import * as Papa from 'papaparse';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
-import { generatePassword } from '../common/utils/password.util';
 
 const USERNAME_PREFIX = 'EBS/STU/';
+// Every new student starts with this; they can change it after signing in.
+const DEFAULT_STUDENT_PASSWORD = '1234';
 
 @Injectable()
 export class StudentService {
@@ -51,7 +61,7 @@ export class StudentService {
       latestAssignments = await this.assignmentRepository.find({
         where: {
           schoolClass: { id: student.schoolClass.id },
-          dueDate: MoreThanOrEqual(new Date()), 
+          dueDate: MoreThanOrEqual(new Date()),
         },
         order: { dueDate: 'ASC' },
         take: 4,
@@ -59,11 +69,11 @@ export class StudentService {
     }
 
     const latestReport = await this.reportRepository.findOne({
-      where: { 
-        student: { id: student.id }, 
-        status: ReportStatus.PUBLISHED 
+      where: {
+        student: { id: student.id },
+        status: ReportStatus.PUBLISHED,
       },
-      order: { weekNumber: 'DESC' }
+      order: { weekNumber: 'DESC' },
     });
 
     let weeklyReportScore: string | null = null;
@@ -75,42 +85,57 @@ export class StudentService {
       weeklyReport: {
         score: weeklyReportScore || '0.0',
         outOf: 5,
-        message: latestReport?.teacherRemark || 'No remarks available for this week.',
+        message:
+          latestReport?.teacherRemark || 'No remarks available for this week.',
       },
-      latestAssignments: latestAssignments.map(a => ({
+      latestAssignments: latestAssignments.map((a) => ({
         id: a.id,
         title: a.title,
         dueDate: a.dueDate,
       })),
       financeSummary: null,
-      announcements: [],    
+      announcements: [],
     };
   }
 
   async enrollStudent(dto: CreateStudentDto) {
-    const schoolClass = await this.classRepository.findOne({ where: { id: dto.classId } });
+    const schoolClass = await this.classRepository.findOne({
+      where: { id: dto.classId },
+    });
     if (!schoolClass) throw new NotFoundException('Class not found');
 
     let department: Department | null = null;
     if (dto.departmentId) {
-      department = await this.departmentRepository.findOne({ where: { id: dto.departmentId } });
+      department = await this.departmentRepository.findOne({
+        where: { id: dto.departmentId },
+      });
       if (!department) throw new NotFoundException('Department not found');
     }
 
     const [created] = await this.createStudents([
-      { firstName: dto.firstName.trim(), lastName: dto.lastName.trim(), schoolClass, department },
+      {
+        firstName: dto.firstName.trim(),
+        lastName: dto.lastName.trim(),
+        schoolClass,
+        department,
+      },
     ]);
     return created;
   }
 
   async batchEnrollStudents(fileBuffer: Buffer) {
-    const parsed = Papa.parse<Record<string, string>>(fileBuffer.toString('utf-8'), {
-      header: true,
-      skipEmptyLines: true,
-      transformHeader: (h) => h.trim().toLowerCase(),
-    });
+    const parsed = Papa.parse<Record<string, string>>(
+      fileBuffer.toString('utf-8'),
+      {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: (h) => h.trim().toLowerCase(),
+      },
+    );
     if (parsed.errors.length > 0) {
-      throw new BadRequestException('Invalid CSV format. Please check headers and data.');
+      throw new BadRequestException(
+        'Invalid CSV format. Please check headers and data.',
+      );
     }
 
     // Check every row before creating anyone.
@@ -126,33 +151,53 @@ export class StudentService {
       const deptName = row.department?.trim();
 
       if (!firstName || !lastName || !className) {
-        throw new BadRequestException(`Row ${rowNum}: first_name, last_name and class are required.`);
+        throw new BadRequestException(
+          `Row ${rowNum}: first_name, last_name and class are required.`,
+        );
       }
-      const schoolClass = classes.find((c) => c.name.toLowerCase() === className.toLowerCase());
+      const schoolClass = classes.find(
+        (c) => c.name.toLowerCase() === className.toLowerCase(),
+      );
       if (!schoolClass) {
-        throw new NotFoundException(`Row ${rowNum}: Class '${className}' not found in the system.`);
+        throw new NotFoundException(
+          `Row ${rowNum}: Class '${className}' not found in the system.`,
+        );
       }
       const department = deptName
-        ? departments.find((d) => d.name.toLowerCase() === deptName.toLowerCase())
+        ? departments.find(
+            (d) => d.name.toLowerCase() === deptName.toLowerCase(),
+          )
         : null;
       if (deptName && !department) {
-        throw new NotFoundException(`Row ${rowNum}: Department '${deptName}' not found.`);
+        throw new NotFoundException(
+          `Row ${rowNum}: Department '${deptName}' not found.`,
+        );
       }
-      return { firstName, lastName, schoolClass, department: department ?? null };
+      return {
+        firstName,
+        lastName,
+        schoolClass,
+        department: department ?? null,
+      };
     });
 
-    if (!newStudents.length) throw new BadRequestException('The CSV file has no students in it.');
+    if (!newStudents.length)
+      throw new BadRequestException('The CSV file has no students in it.');
 
     const students = await this.createStudents(newStudents);
     return { enrolled: students.length, students };
   }
 
-  // Creates accounts with generated usernames and temporary passwords, in one transaction.
+  // Creates accounts with generated usernames and the default password, in one transaction.
   private async createStudents(
-    newStudents: { firstName: string; lastName: string; schoolClass: SchoolClass; department: Department | null }[],
+    newStudents: {
+      firstName: string;
+      lastName: string;
+      schoolClass: SchoolClass;
+      department: Department | null;
+    }[],
   ) {
-    const passwords = newStudents.map(() => generatePassword());
-    const hashes = await Promise.all(passwords.map((p) => bcrypt.hash(p, 10)));
+    const passwordHash = await bcrypt.hash(DEFAULT_STUDENT_PASSWORD, 10);
 
     return this.dataSource.transaction(async (manager) => {
       const usernames = await this.nextUsernames(manager, newStudents.length);
@@ -169,7 +214,11 @@ export class StudentService {
 
       for (const [i, s] of newStudents.entries()) {
         const user = await manager.save(
-          manager.create(User, { username: usernames[i], password: hashes[i], role: UserRole.STUDENT }),
+          manager.create(User, {
+            username: usernames[i],
+            password: passwordHash,
+            role: UserRole.STUDENT,
+          }),
         );
         const student = await manager.save(
           manager.create(Student, {
@@ -193,7 +242,7 @@ export class StudentService {
           className: s.schoolClass.name,
           department: s.department?.name ?? null,
           username: usernames[i],
-          password: passwords[i],
+          password: DEFAULT_STUDENT_PASSWORD,
         });
       }
       return created;
@@ -203,14 +252,17 @@ export class StudentService {
   // Next numbers in the EBS/STU/### sequence. The lock stops two enrollments
   // running at the same time from getting the same number.
   private async nextUsernames(manager: EntityManager, count: number) {
-    await manager.query(`SELECT pg_advisory_xact_lock(hashtext('student-usernames'))`);
+    await manager.query(
+      `SELECT pg_advisory_xact_lock(hashtext('student-usernames'))`,
+    );
     const [{ max }] = await manager.query(
       `SELECT COALESCE(MAX(CAST(substring(username FROM '^${USERNAME_PREFIX}([0-9]+)$') AS int)), 0) AS max
        FROM users WHERE username ~ '^${USERNAME_PREFIX}[0-9]+$'`,
     );
     return Array.from(
       { length: count },
-      (_, i) => `${USERNAME_PREFIX}${String(Number(max) + i + 1).padStart(3, '0')}`,
+      (_, i) =>
+        `${USERNAME_PREFIX}${String(Number(max) + i + 1).padStart(3, '0')}`,
     );
   }
 }

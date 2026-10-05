@@ -13,6 +13,7 @@ import { AssignmentsModule } from './assignments/assignments.module';
 import { StudentModule } from './student/student.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { AdminModule } from './admin/admin.module';
+import { BursaryModule } from './bursary/bursary.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { AdminModule } from './admin/admin.module';
     StudentModule,
     EnrollmentsModule,
     AdminModule,
+    BursaryModule,
   ],
   controllers: [AppController],
   providers: [AppService],

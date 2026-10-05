@@ -12,7 +12,14 @@ import { EnrollmentsModule } from '../enrollments/enrollments.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Student, Assignment, WeeklyReport, User, SchoolClass, Department]),
+    TypeOrmModule.forFeature([
+      Student,
+      Assignment,
+      WeeklyReport,
+      User,
+      SchoolClass,
+      Department,
+    ]),
     EnrollmentsModule,
   ],
   controllers: [StudentController],

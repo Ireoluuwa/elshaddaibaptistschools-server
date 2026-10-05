@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, UploadedFile, UseInterceptors, BadRequestException, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  UploadedFile,
+  UseInterceptors,
+  BadRequestException,
+  UseGuards,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { StudentService } from './student.service';
 import { CreateStudentDto } from './dto/create-student.dto';

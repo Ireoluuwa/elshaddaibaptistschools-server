@@ -14,6 +14,9 @@ import { UserAccountsService } from '../accounts/user-accounts.service';
 import { CreateStaffDto } from '../dto/create-staff.dto';
 import { UpdateStaffDto } from '../dto/update-staff.dto';
 
+// Every new teacher starts with this; they can change it after signing in.
+const DEFAULT_TEACHER_PASSWORD = '0000';
+
 const cleared = (value: string | null | undefined) =>
   value === undefined ? undefined : value?.trim() || null;
 
@@ -66,13 +69,13 @@ export class AdminTeachersService {
     return this.findOne(id);
   }
 
-  // Returns the temporary password once so the admin can share it.
+  // Returns the default password so the admin can share the sign-in details.
   async create(dto: CreateStaffDto) {
     const username = dto.username.trim();
     if (await this.accounts.usernameTaken(username)) {
       throw new ConflictException(`Username ${username} is already in use`);
     }
-    const password = this.accounts.generatePassword();
+    const password = DEFAULT_TEACHER_PASSWORD;
     const passwordHash = await this.accounts.hashPassword(password);
 
     const teacherId = await this.dataSource.transaction(async (manager) => {
