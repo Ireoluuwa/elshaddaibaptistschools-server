@@ -1,4 +1,4 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { SchoolClass } from './entities/school-class.entity';
@@ -7,6 +7,7 @@ import { AcademicYear } from './entities/academic-year.entity';
 import { Term } from './entities/term.entity';
 import { Subject } from './entities/subject.entity';
 import { Curriculum } from './entities/curriculum.entity';
+import { TermStatus } from './enums/term-status.enum';
 
 @Injectable()
 export class AcademicsService {
@@ -25,34 +26,6 @@ export class AcademicsService {
     @InjectRepository(Curriculum)
     private readonly curriculumRepository: Repository<Curriculum>,
   ) {}
-
-  async createAcademicYear(name: string, isCurrent: boolean) {
-    if (isCurrent) {
-      await this.academicYearRepository.update({}, { isCurrent: false });
-    }
-    const academicYear = this.academicYearRepository.create({ name, isCurrent });
-    return this.academicYearRepository.save(academicYear);
-  }
-
-  async createTerm(
-    name: string,
-    startDate: string,
-    endDate: string,
-    academicYearId: string,
-    isCurrent: boolean,
-  ) {
-    if (isCurrent) {
-      await this.termRepository.update({}, { isCurrent: false });
-    }
-    const term = this.termRepository.create({
-      name,
-      startDate,
-      endDate,
-      isCurrent,
-      academicYear: { id: academicYearId } as any,
-    });
-    return this.termRepository.save(term);
-  }
 
   async getCurrentTerm() {
     const term = await this.termRepository.findOne({
@@ -137,6 +110,16 @@ export class AcademicsService {
       where: { id },
       relations: ['academicYear'],
     });
+  }
+
+  // For anything that writes results or reports into a term.
+  async findOpenTermOrFail(id: string) {
+    const term = await this.findTermById(id);
+    if (!term) throw new NotFoundException('Term not found');
+    if (term.status === TermStatus.CLOSED) {
+      throw new ForbiddenException('This term is closed. Ask the admin to reopen it to make changes.');
+    }
+    return term;
   }
 
   async findClassById(id: string) {

@@ -24,8 +24,7 @@ export class ResultsService {
   async upsertResult(dto: UpsertResultDto) {
     const { studentId, termId, ...resultData } = dto;
 
-    const term = await this.academicsService.findTermById(termId);
-    if (!term) throw new NotFoundException('Term not found');
+    const term = await this.academicsService.findOpenTermOrFail(termId);
 
     const existing = await this.resultRepository.findOne({
       where: { student: { id: studentId }, term: { id: termId } },
@@ -195,6 +194,10 @@ export class ResultsService {
 
   async bulkUpsertResults(dto: BulkUpsertResultDto) {
     const errors: { studentId: string; studentName: string; subjectName: string; expected: string }[] = [];
+
+    for (const termId of new Set(dto.results.map((r) => r.termId))) {
+      await this.academicsService.findOpenTermOrFail(termId);
+    }
 
     // Phase 1 — validate all subject names against curriculum
     for (const entry of dto.results) {

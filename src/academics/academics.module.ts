@@ -8,6 +8,8 @@ import { Subject } from './entities/subject.entity';
 import { Curriculum } from './entities/curriculum.entity';
 import { AcademicsService } from './academics.service';
 import { AcademicsController } from './academics.controller';
+import { SessionsController } from './sessions/sessions.controller';
+import { SessionsService } from './sessions/sessions.service';
 
 @Module({
   imports: [
@@ -20,8 +22,8 @@ import { AcademicsController } from './academics.controller';
       Curriculum,
     ]),
   ],
-  controllers: [AcademicsController],
-  providers: [AcademicsService],
+  controllers: [AcademicsController, SessionsController],
+  providers: [AcademicsService, SessionsService],
   exports: [AcademicsService],
 })
 export class AcademicsModule {}

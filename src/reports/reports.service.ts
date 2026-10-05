@@ -23,8 +23,7 @@ export class ReportsService {
   async submitReport(dto: CreateReportDto) {
     const { studentId, termId, weekNumber, ...reportData } = dto;
 
-    // Find the term and its academic year
-    const term = await this.academicsService.findTermById(termId);
+    const term = await this.academicsService.findOpenTermOrFail(termId);
 
     // Check if report already exists for this student/term/week
     let report: WeeklyReport;
