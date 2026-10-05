@@ -30,19 +30,30 @@ export class EnrollmentsService {
     });
     const enrollment = term
       ? await this.enrollmentRepository.findOne({
-          where: { student: { id: student.id }, academicYear: { id: term.academicYear.id } },
+          where: {
+            student: { id: student.id },
+            academicYear: { id: term.academicYear.id },
+          },
           relations: ['schoolClass', 'department'],
         })
       : null;
 
     return enrollment
-      ? { schoolClass: enrollment.schoolClass, department: enrollment.department }
-      : { schoolClass: student.schoolClass ?? null, department: student.department ?? null };
+      ? {
+          schoolClass: enrollment.schoolClass,
+          department: enrollment.department,
+        }
+      : {
+          schoolClass: student.schoolClass ?? null,
+          department: student.department ?? null,
+        };
   }
 
   // Records the student's class for the current session (no-op if no session is current).
   async enrollInCurrentSession(manager: EntityManager, student: Student) {
-    const year = await manager.findOne(AcademicYear, { where: { isCurrent: true } });
+    const year = await manager.findOne(AcademicYear, {
+      where: { isCurrent: true },
+    });
     if (!year) return;
 
     const existing = await manager.findOne(Enrollment, {

@@ -10,13 +10,13 @@ import { EnrollmentOutcome } from '../enums/enrollment-outcome.enum';
 @Entity('enrollments')
 @Unique(['student', 'academicYear'])
 export class Enrollment extends BaseEntity {
-  @ManyToOne(() => Student, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Student, { nullable: false, onDelete: 'CASCADE' })
   student: Student;
 
-  @ManyToOne(() => AcademicYear, { onDelete: 'CASCADE' })
+  @ManyToOne(() => AcademicYear, { nullable: false, onDelete: 'CASCADE' })
   academicYear: AcademicYear;
 
-  @ManyToOne(() => SchoolClass)
+  @ManyToOne(() => SchoolClass, { nullable: false })
   schoolClass: SchoolClass;
 
   @ManyToOne(() => Department, { nullable: true })
