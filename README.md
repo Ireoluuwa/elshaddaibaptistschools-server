@@ -62,6 +62,24 @@ $ npm run start:dev
 $ npm run start:prod
 ```
 
+### Database migrations
+
+The app never changes database tables on startup (`synchronize` is off). Every schema change is a migration in `src/database/migrations`:
+
+```bash
+# 1. Change an entity, then generate a migration from the difference
+$ npm run migration:generate --name=AddEnrollments
+
+# 2. Review the generated file, then apply it
+$ npm run migration:run
+
+# Other commands
+$ npm run migration:show     # which migrations have run
+$ npm run migration:revert   # undo the most recent migration
+```
+
+Always back up the production database before running migrations against it.
+
 ## Core Architecture Highlights
 
 ### Transactional Safety
