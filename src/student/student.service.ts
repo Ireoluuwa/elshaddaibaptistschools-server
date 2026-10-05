@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThanOrEqual, DataSource } from 'typeorm';
+import { Repository, MoreThanOrEqual, DataSource, EntityManager } from 'typeorm';
 import { Assignment } from '../assignments/entities/assignment.entity';
 import { WeeklyReport } from '../reports/entities/weekly-report.entity';
 import { Student } from '../profile/entities/models/student.entity';
@@ -13,6 +13,9 @@ import { UserRole } from '../common/enums/user-role.enum';
 import * as bcrypt from 'bcrypt';
 import * as Papa from 'papaparse';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
+import { generatePassword } from '../common/utils/password.util';
+
+const USERNAME_PREFIX = 'EBS/STU/';
 
 @Injectable()
 export class StudentService {
@@ -84,26 +87,7 @@ export class StudentService {
     };
   }
 
-  async checkUsername(username: string) {
-    const existingUser = await this.userRepository.findOne({ where: { username } });
-    return { isAvailable: !existingUser };
-  }
-
-  async getLastUsername() {
-    const lastUser = await this.userRepository.findOne({
-      where: { role: UserRole.STUDENT },
-      order: { createdAt: 'DESC' },
-    });
-    return { lastUsername: lastUser?.username || null };
-  }
-
   async enrollStudent(dto: CreateStudentDto) {
-   
-    const existingUser = await this.userRepository.findOne({ where: { username: dto.username } });
-    if (existingUser) {
-      throw new ConflictException(`Username ${dto.username} already exists`);
-    }
-
     const schoolClass = await this.classRepository.findOne({ where: { id: dto.classId } });
     if (!schoolClass) throw new NotFoundException('Class not found');
 
@@ -113,133 +97,120 @@ export class StudentService {
       if (!department) throw new NotFoundException('Department not found');
     }
 
- 
-    const rawPassword = dto.password || '1234'; 
-    const hashedPassword = await bcrypt.hash(rawPassword, 10);
-
- 
-    return this.dataSource.transaction(async (manager) => {
-      const savedUser = await manager.save(
-        manager.create(User, {
-          username: dto.username,
-          password: hashedPassword,
-          role: UserRole.STUDENT,
-        }),
-      );
-
-      const student = await manager.save(
-        manager.create(Student, {
-          firstName: dto.firstName,
-          lastName: dto.lastName,
-          schoolClass,
-          department: department || undefined,
-          user: savedUser,
-          dateOfBirth: '2000-01-01',
-          yearJoined: new Date().getFullYear(),
-          homeAddress: 'TBD',
-          guardianName: 'TBD',
-          guardianPhone: 'TBD',
-        }),
-      );
-
-      await this.enrollmentsService.enrollInCurrentSession(manager, student);
-      return student;
-    });
+    const [created] = await this.createStudents([
+      { firstName: dto.firstName.trim(), lastName: dto.lastName.trim(), schoolClass, department },
+    ]);
+    return created;
   }
 
   async batchEnrollStudents(fileBuffer: Buffer) {
-    
-    const csvData = fileBuffer.toString('utf-8');
-    const parsed = Papa.parse(csvData, {
+    const parsed = Papa.parse<Record<string, string>>(fileBuffer.toString('utf-8'), {
       header: true,
       skipEmptyLines: true,
+      transformHeader: (h) => h.trim().toLowerCase(),
     });
-
     if (parsed.errors.length > 0) {
       throw new BadRequestException('Invalid CSV format. Please check headers and data.');
     }
 
-    const rows = parsed.data as any[];
-    
+    // Check every row before creating anyone.
+    const [classes, departments] = await Promise.all([
+      this.classRepository.find(),
+      this.departmentRepository.find(),
+    ]);
+    const newStudents = parsed.data.map((row, index) => {
+      const rowNum = index + 2;
+      const firstName = row.first_name?.trim();
+      const lastName = row.last_name?.trim();
+      const className = row.class?.trim();
+      const deptName = row.department?.trim();
 
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      let enrolledCount = 0;
-
-      for (const [index, row] of rows.entries()) {
-        const rowNum = index + 2; 
-        
-        const { first_name, last_name, username, class: className, department: deptName } = row;
-
-        if (!first_name || !last_name || !username || !className) {
-          throw new BadRequestException(`Row ${rowNum}: Missing required fields (first_name, last_name, username, class).`);
-        }
-
-        
-        const existing = await queryRunner.manager.findOne(User, { where: { username } });
-        if (existing) {
-          throw new ConflictException(`Row ${rowNum}: Username '${username}' is already taken.`);
-        }
-
-      
-        const schoolClass = await queryRunner.manager.findOne(SchoolClass, { where: { name: className } });
-        if (!schoolClass) {
-          throw new NotFoundException(`Row ${rowNum}: Class '${className}' not found in the system.`);
-        }
-
-        
-        let department: Department | null = null;
-        if (deptName && deptName.trim() !== '') {
-          department = await queryRunner.manager.findOne(Department, { where: { name: deptName } });
-          if (!department) {
-            throw new NotFoundException(`Row ${rowNum}: Department '${deptName}' not found.`);
-          }
-        }
-
-        
-        const hashedPassword = await bcrypt.hash('1234', 10);
-
-        
-        const user = queryRunner.manager.create(User, {
-          username,
-          password: hashedPassword,
-          role: UserRole.STUDENT,
-        });
-        const savedUser = await queryRunner.manager.save(user);
-
-
-        const student = queryRunner.manager.create(Student, {
-          firstName: first_name,
-          lastName: last_name,
-          schoolClass,
-          department: department || undefined,
-          user: savedUser,
-          dateOfBirth: '2000-01-01',
-          yearJoined: new Date().getFullYear(),
-          homeAddress: 'TBD',
-          guardianName: 'TBD',
-          guardianPhone: 'TBD',
-        });
-        await queryRunner.manager.save(student);
-        await this.enrollmentsService.enrollInCurrentSession(queryRunner.manager, student);
-
-        enrolledCount++;
+      if (!firstName || !lastName || !className) {
+        throw new BadRequestException(`Row ${rowNum}: first_name, last_name and class are required.`);
       }
+      const schoolClass = classes.find((c) => c.name.toLowerCase() === className.toLowerCase());
+      if (!schoolClass) {
+        throw new NotFoundException(`Row ${rowNum}: Class '${className}' not found in the system.`);
+      }
+      const department = deptName
+        ? departments.find((d) => d.name.toLowerCase() === deptName.toLowerCase())
+        : null;
+      if (deptName && !department) {
+        throw new NotFoundException(`Row ${rowNum}: Department '${deptName}' not found.`);
+      }
+      return { firstName, lastName, schoolClass, department: department ?? null };
+    });
 
-      
-      await queryRunner.commitTransaction();
-      return { message: `Successfully enrolled ${enrolledCount} students in batch.` };
+    if (!newStudents.length) throw new BadRequestException('The CSV file has no students in it.');
 
-    } catch (err) {
-      
-      await queryRunner.rollbackTransaction();
-      throw err; 
-    } finally {
-    
-      await queryRunner.release();
-    }
+    const students = await this.createStudents(newStudents);
+    return { enrolled: students.length, students };
+  }
+
+  // Creates accounts with generated usernames and temporary passwords, in one transaction.
+  private async createStudents(
+    newStudents: { firstName: string; lastName: string; schoolClass: SchoolClass; department: Department | null }[],
+  ) {
+    const passwords = newStudents.map(() => generatePassword());
+    const hashes = await Promise.all(passwords.map((p) => bcrypt.hash(p, 10)));
+
+    return this.dataSource.transaction(async (manager) => {
+      const usernames = await this.nextUsernames(manager, newStudents.length);
+
+      const created: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        className: string;
+        department: string | null;
+        username: string;
+        password: string;
+      }[] = [];
+
+      for (const [i, s] of newStudents.entries()) {
+        const user = await manager.save(
+          manager.create(User, { username: usernames[i], password: hashes[i], role: UserRole.STUDENT }),
+        );
+        const student = await manager.save(
+          manager.create(Student, {
+            firstName: s.firstName,
+            lastName: s.lastName,
+            schoolClass: s.schoolClass,
+            department: s.department ?? undefined,
+            user,
+            dateOfBirth: '2000-01-01',
+            yearJoined: new Date().getFullYear(),
+            homeAddress: 'TBD',
+            guardianName: 'TBD',
+            guardianPhone: 'TBD',
+          }),
+        );
+        await this.enrollmentsService.enrollInCurrentSession(manager, student);
+        created.push({
+          id: student.id,
+          firstName: s.firstName,
+          lastName: s.lastName,
+          className: s.schoolClass.name,
+          department: s.department?.name ?? null,
+          username: usernames[i],
+          password: passwords[i],
+        });
+      }
+      return created;
+    });
+  }
+
+  // Next numbers in the EBS/STU/### sequence. The lock stops two enrollments
+  // running at the same time from getting the same number.
+  private async nextUsernames(manager: EntityManager, count: number) {
+    await manager.query(`SELECT pg_advisory_xact_lock(hashtext('student-usernames'))`);
+    const [{ max }] = await manager.query(
+      `SELECT COALESCE(MAX(CAST(substring(username FROM '^${USERNAME_PREFIX}([0-9]+)$') AS int)), 0) AS max
+       FROM users WHERE username ~ '^${USERNAME_PREFIX}[0-9]+$'`,
+    );
+    return Array.from(
+      { length: count },
+      (_, i) => `${USERNAME_PREFIX}${String(Number(max) + i + 1).padStart(3, '0')}`,
+    );
   }
 }

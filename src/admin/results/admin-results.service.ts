@@ -6,6 +6,7 @@ import { ResultStatus } from '../../results/enums/result-status.enum';
 import { Term } from '../../academics/entities/term.entity';
 import { SchoolClass } from '../../academics/entities/school-class.entity';
 import { EnrollmentsService } from '../../enrollments/enrollments.service';
+import { assertTermOpenForAdmin } from '../../academics/term-lock';
 
 @Injectable()
 export class AdminResultsService {
@@ -81,12 +82,13 @@ export class AdminResultsService {
     });
   }
 
-  // Allowed after a term is closed: remarks are written at the end of term.
   async setVpRemark(resultId: string, vpRemark: string | null) {
     const result = await this.resultRepository.findOne({
       where: { id: resultId },
+      relations: ['term'],
     });
     if (!result) throw new NotFoundException('Result not found');
+    assertTermOpenForAdmin(result.term);
     result.vpRemark = vpRemark?.trim() || null;
     await this.resultRepository.save(result);
     return { id: result.id, vpRemark: result.vpRemark };

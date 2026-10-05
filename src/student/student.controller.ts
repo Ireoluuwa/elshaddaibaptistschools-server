@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UploadedFile, UseInterceptors, BadRequestException, UseGuards, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, UploadedFile, UseInterceptors, BadRequestException, UseGuards } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { StudentService } from './student.service';
 import { CreateStudentDto } from './dto/create-student.dto';
@@ -20,20 +20,6 @@ export class StudentController {
   @ResponseMessage('Student dashboard retrieved successfully')
   async getDashboard(@User() user: JwtPayload) {
     return this.studentService.getDashboard(user.sub);
-  }
-
-  @Get('check-username/:username')
-  @Roles(UserRole.TEACHER, UserRole.ADMIN)
-  @ResponseMessage('Username availability checked')
-  async checkUsername(@Param('username') username: string) {
-    return this.studentService.checkUsername(username);
-  }
-
-  @Get('last-username')
-  @Roles(UserRole.TEACHER, UserRole.ADMIN)
-  @ResponseMessage('Last student username retrieved')
-  async getLastUsername() {
-    return this.studentService.getLastUsername();
   }
 
   @Post('manual')

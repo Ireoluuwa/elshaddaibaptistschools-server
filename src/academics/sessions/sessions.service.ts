@@ -14,6 +14,7 @@ import { CreateTermDto } from './dto/create-term.dto';
 import { UpdateTermDto } from './dto/update-term.dto';
 import { UpdateReportDetailsDto } from './dto/update-report-details.dto';
 import { EnrollmentsService } from '../../enrollments/enrollments.service';
+import { assertTermOpenForAdmin } from '../term-lock';
 
 @Injectable()
 export class SessionsService {
@@ -70,6 +71,7 @@ export class SessionsService {
 
   async updateTerm(id: string, dto: UpdateTermDto) {
     const term = await this.findTerm(id);
+    assertTermOpenForAdmin(term);
     Object.assign(term, dto);
     this.assertDateRange(term.startDate, term.endDate);
     return this.toTermView(await this.termRepository.save(term));
@@ -92,6 +94,7 @@ export class SessionsService {
 
   async updateReportDetails(id: string, dto: UpdateReportDetailsDto) {
     const term = await this.findTerm(id);
+    assertTermOpenForAdmin(term);
     // Only touch fields that were sent; null clears a field.
     for (const key of [
       'signatureUrl',
