@@ -15,8 +15,10 @@ import { BulkUpsertResultDto } from './dto/bulk-upsert-result.dto';
 import { ResultStatus } from './enums/result-status.enum';
 import {
   EnrollmentsService,
+  Placement,
   placementLabel,
 } from '../enrollments/enrollments.service';
+import { EnrollmentOutcome } from '../enrollments/enums/enrollment-outcome.enum';
 import { BursaryService } from '../bursary/bursary.service';
 
 @Injectable()
@@ -139,6 +141,7 @@ export class ResultsService {
               termId,
               placement.schoolClass?.id ?? null,
             ),
+            placement,
           )
         : null,
     };
@@ -196,7 +199,10 @@ export class ResultsService {
         studentId: student.user?.username || 'N/A',
         teacherName: await this.classTeacherName(placement.schoolClass?.id),
       },
-      result: result && !feesHold ? this.forReportSheet(result, fees) : null,
+      result:
+        result && !feesHold
+          ? this.forReportSheet(result, fees, placement)
+          : null,
       feesHold,
       notReleased: !released,
     };
@@ -309,6 +315,7 @@ export class ResultsService {
   private forReportSheet(
     result: TerminalResult,
     fees: { outstanding: number; nextTermTuition: number; ict: number },
+    placement: Placement,
   ) {
     const { term } = result;
     const { signatureUrl, signedDate, vacationDate, resumptionDate } = term;
@@ -317,6 +324,7 @@ export class ResultsService {
     return {
       ...result,
       fees,
+      promotion: this.promotionFor(term.name, placement),
       term: {
         id: term.id,
         name: term.name,
@@ -325,6 +333,25 @@ export class ResultsService {
           ? { signatureUrl, signedDate, vacationDate, resumptionDate }
           : null,
       },
+    };
+  }
+
+  // Printed on the 3rd Term report sheet once the admin has decided.
+  private promotionFor(termName: string, placement: Placement) {
+    const { outcome, schoolClass } = placement;
+    const shown = [
+      EnrollmentOutcome.PROMOTED,
+      EnrollmentOutcome.REPEATED,
+      EnrollmentOutcome.GRADUATED,
+    ];
+    if (termName !== '3rd Term' || !outcome || !shown.includes(outcome))
+      return null;
+    return {
+      outcome,
+      nextClass:
+        outcome === EnrollmentOutcome.PROMOTED
+          ? (schoolClass?.nextClass?.name ?? null)
+          : null,
     };
   }
 

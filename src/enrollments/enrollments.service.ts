@@ -12,6 +12,8 @@ import { EnrollmentOutcome } from './enums/enrollment-outcome.enum';
 export interface Placement {
   schoolClass: SchoolClass | null;
   department: Department | null;
+  // The end-of-session promotion decision, once the admin has made it.
+  outcome?: EnrollmentOutcome | null;
 }
 
 @Injectable()
@@ -35,7 +37,7 @@ export class EnrollmentsService {
             student: { id: student.id },
             academicYear: { id: term.academicYear.id },
           },
-          relations: ['schoolClass', 'department'],
+          relations: ['schoolClass', 'schoolClass.nextClass', 'department'],
         })
       : null;
 
@@ -43,6 +45,7 @@ export class EnrollmentsService {
       ? {
           schoolClass: enrollment.schoolClass,
           department: enrollment.department,
+          outcome: enrollment.outcome,
         }
       : {
           schoolClass: student.schoolClass ?? null,
@@ -67,7 +70,13 @@ export class EnrollmentsService {
         ...(classId ? { schoolClass: { id: classId } } : {}),
         student: { user: { isActive: true } },
       },
-      relations: ['student', 'student.user', 'schoolClass', 'department', 'nextDepartment'],
+      relations: [
+        'student',
+        'student.user',
+        'schoolClass',
+        'department',
+        'nextDepartment',
+      ],
       order: { student: { lastName: 'ASC', firstName: 'ASC' } },
     });
   }
