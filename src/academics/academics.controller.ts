@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Patch, Delete, Body, UseGuards, Query, Param, ParseUUIDPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  UseGuards,
+  Query,
+  Param,
+  ParseUUIDPipe,
+} from '@nestjs/common';
 import { SetNextClassDto } from './dto/set-next-class.dto';
 import { AcademicsService } from './academics.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -22,7 +33,10 @@ export class AcademicsController {
 
   @Patch('classes/:id/next-class')
   @ResponseMessage('Next class updated successfully')
-  async setNextClass(@Param('id', ParseUUIDPipe) id: string, @Body() dto: SetNextClassDto) {
+  async setNextClass(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: SetNextClassDto,
+  ) {
     return this.academicsService.setNextClass(id, dto.nextClassId);
   }
 
@@ -81,7 +95,12 @@ export class AcademicsController {
   @Post('curriculum')
   @ResponseMessage('Curriculum mapping created successfully')
   async createCurriculumMapping(
-    @Body() body: { schoolClassId: string; departmentId?: string; subjectId: string },
+    @Body()
+    body: {
+      schoolClassId: string;
+      departmentId?: string;
+      subjectId: string;
+    },
   ) {
     return this.academicsService.createCurriculumMapping(
       body.schoolClassId,

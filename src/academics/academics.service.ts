@@ -1,4 +1,10 @@
-import { Injectable, BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { SchoolClass } from './entities/school-class.entity';
@@ -12,7 +18,6 @@ import { Student } from '../profile/entities/models/student.entity';
 
 @Injectable()
 export class AcademicsService {
-
   constructor(
     @InjectRepository(SchoolClass)
     private readonly classRepository: Repository<SchoolClass>,
@@ -79,7 +84,6 @@ export class AcademicsService {
   }
 
   async createClass(name: string, isSenior: boolean) {
-
     const existing = await this.classRepository.findOne({ where: { name } });
     if (existing) throw new ConflictException('Class already exists');
 
@@ -103,8 +107,12 @@ export class AcademicsService {
   async setNextClass(id: string, nextClassId: string | null) {
     const schoolClass = await this.classRepository.findOne({ where: { id } });
     if (!schoolClass) throw new NotFoundException('Class not found');
-    if (nextClassId === id) throw new BadRequestException('A class cannot lead to itself');
-    if (nextClassId && !(await this.classRepository.exists({ where: { id: nextClassId } }))) {
+    if (nextClassId === id)
+      throw new BadRequestException('A class cannot lead to itself');
+    if (
+      nextClassId &&
+      !(await this.classRepository.exists({ where: { id: nextClassId } }))
+    ) {
       throw new NotFoundException('Next class not found');
     }
     await this.classRepository.update(id, {
@@ -114,7 +122,9 @@ export class AcademicsService {
   }
 
   async createDepartment(name: string) {
-    const existing = await this.departmentRepository.findOne({ where: { name } });
+    const existing = await this.departmentRepository.findOne({
+      where: { name },
+    });
     if (existing) throw new ConflictException('Department already exists');
 
     const department = this.departmentRepository.create({ name });
@@ -122,11 +132,15 @@ export class AcademicsService {
   }
 
   async deleteDepartment(id: string) {
-    const department = await this.departmentRepository.findOne({ where: { id } });
+    const department = await this.departmentRepository.findOne({
+      where: { id },
+    });
     if (!department) throw new NotFoundException('Department not found');
 
     const [students, subjects] = await Promise.all([
-      this.departmentRepository.manager.count(Student, { where: { department: { id } } }),
+      this.departmentRepository.manager.count(Student, {
+        where: { department: { id } },
+      }),
       this.curriculumRepository.count({ where: { department: { id } } }),
     ]);
     if (students || subjects) {
@@ -154,7 +168,9 @@ export class AcademicsService {
     const term = await this.findTermById(id);
     if (!term) throw new NotFoundException('Term not found');
     if (term.status === TermStatus.CLOSED) {
-      throw new ForbiddenException('This term is closed. Ask the admin to reopen it to make changes.');
+      throw new ForbiddenException(
+        'This term is closed. Ask the admin to reopen it to make changes.',
+      );
     }
     return term;
   }
@@ -179,10 +195,14 @@ export class AcademicsService {
     return this.subjectRepository.find({ order: { name: 'ASC' } });
   }
 
-  async createCurriculumMapping(schoolClassId: string, departmentId: string | null, subjectId: string) {
+  async createCurriculumMapping(
+    schoolClassId: string,
+    departmentId: string | null,
+    subjectId: string,
+  ) {
     const mapping = this.curriculumRepository.create({
       schoolClass: { id: schoolClassId } as any,
-      department: departmentId ? { id: departmentId } as any : null,
+      department: departmentId ? ({ id: departmentId } as any) : null,
       subject: { id: subjectId } as any,
     });
     return this.curriculumRepository.save(mapping);
@@ -190,26 +210,38 @@ export class AcademicsService {
 
   async getMappedSubjects(schoolClassId: string, departmentId?: string | null) {
     // Always fetch subjects with no department (shared/general subjects for the class)
-    const sharedWhere: any = { schoolClass: { id: schoolClassId }, department: IsNull() };
+    const sharedWhere: any = {
+      schoolClass: { id: schoolClassId },
+      department: IsNull(),
+    };
 
     if (departmentId) {
       // Fetch both department-specific and shared subjects, then deduplicate
-      const deptWhere: any = { schoolClass: { id: schoolClassId }, department: { id: departmentId } };
+      const deptWhere: any = {
+        schoolClass: { id: schoolClassId },
+        department: { id: departmentId },
+      };
 
       const [sharedMappings, deptMappings] = await Promise.all([
-        this.curriculumRepository.find({ where: sharedWhere, relations: ['subject'] }),
-        this.curriculumRepository.find({ where: deptWhere, relations: ['subject'] }),
+        this.curriculumRepository.find({
+          where: sharedWhere,
+          relations: ['subject'],
+        }),
+        this.curriculumRepository.find({
+          where: deptWhere,
+          relations: ['subject'],
+        }),
       ]);
 
       const seen = new Set<string>();
-      const combined = [...sharedMappings, ...deptMappings].filter(m => {
+      const combined = [...sharedMappings, ...deptMappings].filter((m) => {
         if (seen.has(m.subject.id)) return false;
         seen.add(m.subject.id);
         return true;
       });
 
       return combined
-        .map(m => m.subject)
+        .map((m) => m.subject)
         .sort((a, b) => a.name.localeCompare(b.name));
     }
 
@@ -222,7 +254,11 @@ export class AcademicsService {
 
     const seen = new Set<string>();
     return mappings
-      .filter(m => { if (seen.has(m.subject.id)) return false; seen.add(m.subject.id); return true; })
-      .map(m => m.subject);
+      .filter((m) => {
+        if (seen.has(m.subject.id)) return false;
+        seen.add(m.subject.id);
+        return true;
+      })
+      .map((m) => m.subject);
   }
 }
