@@ -177,6 +177,10 @@ describe('School flows (e2e)', () => {
 
     beforeAll(async () => {
       student = await login(app, 'jss1a');
+      await app.get(DataSource).query(
+        `INSERT INTO staff_profiles ("firstName", "lastName", "signatureUrl", "userId")
+         SELECT 'Vice', 'Principal', 'https://example.com/vp-signature.png', id FROM users WHERE username = 'admin'`,
+      );
       const res = await api()
         .put(`/api/bursary/fees?termId=${fx.termId}`)
         .set('Authorization', bursar)
@@ -207,6 +211,9 @@ describe('School flows (e2e)', () => {
       expect(res.body.data.feesHold).toBeNull();
       expect(res.body.data.result.scores[0].subjectName).toBe('Mathematics');
       expect(res.body.data.result.vpRemark).toBe('Good work');
+      expect(res.body.data.result.term.reportDetails.signatureUrl).toBe(
+        'https://example.com/vp-signature.png',
+      );
       // Maths 10 + 11 + 50 out of 100; later terms have no result yet.
       expect(res.body.data.result.termScores).toEqual([
         { term: '1st Term', score: 71 },

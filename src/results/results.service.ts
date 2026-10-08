@@ -144,6 +144,7 @@ export class ResultsService {
             ),
             placement,
             await this.termScores(studentId, result.term, false),
+            await this.schoolSignature(),
           )
         : null,
     };
@@ -208,6 +209,7 @@ export class ResultsService {
               fees,
               placement,
               await this.termScores(student.id, result.term, true),
+              await this.schoolSignature(),
             )
           : null,
       feesHold,
@@ -324,9 +326,10 @@ export class ResultsService {
     fees: { outstanding: number; nextTermTuition: number; ict: number },
     placement: Placement,
     termScores: { term: string; score: number | null }[],
+    signatureUrl: string | null,
   ) {
     const { term } = result;
-    const { signatureUrl, signedDate, vacationDate, resumptionDate } = term;
+    const { signedDate, vacationDate, resumptionDate } = term;
     const hasDetails =
       signatureUrl || signedDate || vacationDate || resumptionDate;
     return {
@@ -343,6 +346,18 @@ export class ResultsService {
           : null,
       },
     };
+  }
+
+  // Report sheets are signed with the signature saved in the admin's Profile.
+  private async schoolSignature(): Promise<string | null> {
+    const [row] = await this.resultRepository.manager.query<
+      { signatureUrl: string }[]
+    >(
+      `SELECT sp."signatureUrl" FROM staff_profiles sp JOIN users u ON u.id = sp."userId"
+       WHERE u.role = 'admin' AND u."isActive" AND sp."signatureUrl" IS NOT NULL
+       ORDER BY sp."updatedAt" DESC LIMIT 1`,
+    );
+    return row?.signatureUrl ?? null;
   }
 
   // Overall score for each term of the session, up to the one on the sheet.
