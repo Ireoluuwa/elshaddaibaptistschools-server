@@ -68,6 +68,20 @@ export class SessionsController {
     return this.sessionsService.closeTerm(id);
   }
 
+  @Post('terms/:id/release-results')
+  @HttpCode(HttpStatus.OK)
+  @ResponseMessage('Results released to students')
+  releaseResults(@Param('id', ParseUUIDPipe) id: string) {
+    return this.sessionsService.setResultsReleased(id, true);
+  }
+
+  @Post('terms/:id/hide-results')
+  @HttpCode(HttpStatus.OK)
+  @ResponseMessage('Results hidden from students')
+  hideResults(@Param('id', ParseUUIDPipe) id: string) {
+    return this.sessionsService.setResultsReleased(id, false);
+  }
+
   @Patch('terms/:id/report-details')
   @ResponseMessage('Report sheet details saved successfully')
   updateReportDetails(

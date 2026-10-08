@@ -159,14 +159,19 @@ export class ResultsService {
     if (!targetTermId)
       return { periods, activeTermId: null, result: null, student: null };
 
-    const result = await this.resultRepository.findOne({
-      where: {
-        student: { id: student.id },
-        term: { id: targetTermId },
-        status: ResultStatus.PUBLISHED,
-      },
-      relations: ['term', 'term.academicYear'],
-    });
+    const term = await this.academicsService.findTermById(targetTermId);
+    const released = !!term?.resultsReleasedAt;
+    // Nothing about the result (or fees) is sent before the admin releases it.
+    const result = released
+      ? await this.resultRepository.findOne({
+          where: {
+            student: { id: student.id },
+            term: { id: targetTermId },
+            status: ResultStatus.PUBLISHED,
+          },
+          relations: ['term', 'term.academicYear'],
+        })
+      : null;
 
     const placement = await this.enrollmentsService.placementForTerm(
       student,
@@ -193,6 +198,7 @@ export class ResultsService {
       },
       result: result && !feesHold ? this.forReportSheet(result, fees) : null,
       feesHold,
+      notReleased: !released,
     };
   }
 

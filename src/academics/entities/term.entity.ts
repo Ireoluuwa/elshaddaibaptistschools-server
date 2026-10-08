@@ -34,6 +34,10 @@ export class Term extends BaseEntity {
   @Column({ type: 'date', nullable: true })
   resumptionDate: string | null;
 
+  // Students only see this term's results once the admin releases them.
+  @Column({ type: 'timestamptz', nullable: true })
+  resultsReleasedAt: Date | null;
+
   @ManyToOne(
     () => AcademicYear,
     (academicYear: AcademicYear) => academicYear.terms,

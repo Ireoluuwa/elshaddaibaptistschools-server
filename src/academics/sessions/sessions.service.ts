@@ -92,6 +92,18 @@ export class SessionsService {
     return this.toTermView(await this.termRepository.save(term));
   }
 
+  // Allowed on closed terms too: release doesn't change any results.
+  async setResultsReleased(id: string, released: boolean) {
+    const term = await this.findTerm(id);
+    if (released && term.status === TermStatus.UPCOMING) {
+      throw new BadRequestException(
+        "This term hasn't started yet, so there are no results to release",
+      );
+    }
+    term.resultsReleasedAt = released ? new Date() : null;
+    return this.toTermView(await this.termRepository.save(term));
+  }
+
   async updateReportDetails(id: string, dto: UpdateReportDetailsDto) {
     const term = await this.findTerm(id);
     assertTermOpenForAdmin(term);
@@ -209,6 +221,7 @@ export class SessionsService {
       startDate: term.startDate,
       endDate: term.endDate,
       status: term.status,
+      resultsReleasedAt: term.resultsReleasedAt,
       reportDetails: hasDetails
         ? { signatureUrl, signedDate, vacationDate, resumptionDate }
         : null,

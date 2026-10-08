@@ -34,15 +34,19 @@ export class AdminResultsService {
 
     return classes.map((c) => {
       const students = roster.filter((e) => e.schoolClass.id === c.id);
-      const statuses = students
-        .map((e) => results.get(e.student.id)?.status)
-        .filter((s): s is ResultStatus => !!s);
+      const entered = students
+        .map((e) => results.get(e.student.id))
+        .filter((r): r is TerminalResult => !!r);
+      const published = entered.filter(
+        (r) => r.status === ResultStatus.PUBLISHED,
+      );
       return {
         classId: c.id,
         className: c.name,
         students: students.length,
-        entered: statuses.length,
-        published: statuses.filter((s) => s === ResultStatus.PUBLISHED).length,
+        entered: entered.length,
+        published: published.length,
+        vpRemarks: published.filter((r) => !!r.vpRemark).length,
       };
     });
   }
