@@ -167,6 +167,13 @@ export class SessionsService {
       { isCurrent: true },
     );
 
+    if (!previousYear) {
+      await this.enrollmentsService.enrollPlacedStudents(
+        manager,
+        term.academicYear.id,
+      );
+    }
+
     // Moving into a later session applies the promotion decisions (once).
     if (
       previousYear &&

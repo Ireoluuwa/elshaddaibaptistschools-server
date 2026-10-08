@@ -189,6 +189,19 @@ export class EnrollmentsService {
     return summary;
   }
 
+  // For the first session, when there's nothing to roll over from: every active
+  // student with a class is enrolled in the class they're in now.
+  async enrollPlacedStudents(manager: EntityManager, yearId: string) {
+    await manager.query(
+      `INSERT INTO enrollments ("studentId", "academicYearId", "schoolClassId", "departmentId")
+       SELECT s.id, $1, s."schoolClassId", s."departmentId"
+       FROM student_profiles s JOIN users u ON u.id = s."userId"
+       WHERE u."isActive" AND s."schoolClassId" IS NOT NULL
+         AND NOT EXISTS (SELECT 1 FROM enrollments e WHERE e."studentId" = s.id AND e."academicYearId" = $1)`,
+      [yearId],
+    );
+  }
+
   // Records the student's class for the current session (no-op if no session is current).
   async enrollInCurrentSession(manager: EntityManager, student: Student) {
     const year = await manager.findOne(AcademicYear, {

@@ -338,4 +338,36 @@ describe('School flows (e2e)', () => {
       expect(await enrollmentCount()).toBe(7);
     });
   });
+  describe('first session after a clean start', () => {
+    it('enrolls every active student who has a class', async () => {
+      const db = app.get(DataSource);
+      await db.query(`DELETE FROM terminal_results`);
+      await db.query(`DELETE FROM weekly_reports`);
+      await db.query(`DELETE FROM academic_years`);
+
+      await api()
+        .post('/api/academics/sessions')
+        .set('Authorization', admin)
+        .send({
+          name: '2030/2031',
+          firstTerm: {
+            name: '1st Term',
+            startDate: '2030-09-09',
+            endDate: '2030-12-13',
+            makeActive: true,
+          },
+        })
+        .expect(201);
+
+      const [{ placed }] = await db.query(
+        `SELECT count(*)::int AS placed FROM student_profiles s JOIN users u ON u.id = s."userId"
+         WHERE u."isActive" AND s."schoolClassId" IS NOT NULL`,
+      );
+      const [{ enrolled }] = await db.query(
+        `SELECT count(*)::int AS enrolled FROM enrollments`,
+      );
+      expect(placed).toBeGreaterThan(0);
+      expect(enrolled).toBe(placed);
+    });
+  });
 });
