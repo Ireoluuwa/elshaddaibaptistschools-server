@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { MoreThan, Repository } from 'typeorm';
 import { TerminalResult } from './entities/terminal-result.entity';
 import { Term } from '../academics/entities/term.entity';
 import { Student } from '../profile/entities/models/student.entity';
@@ -144,7 +144,7 @@ export class ResultsService {
             ),
             placement,
             await this.termScores(studentId, result.term, false),
-            await this.schoolSignature(),
+            await this.sheetExtras(result.term),
           )
         : null,
     };
@@ -209,7 +209,7 @@ export class ResultsService {
               fees,
               placement,
               await this.termScores(student.id, result.term, true),
-              await this.schoolSignature(),
+              await this.sheetExtras(result.term),
             )
           : null,
       feesHold,
@@ -326,10 +326,11 @@ export class ResultsService {
     fees: { outstanding: number; nextTermTuition: number; ict: number },
     placement: Placement,
     termScores: { term: string; score: number | null }[],
-    signatureUrl: string | null,
+    extras: { signatureUrl: string | null; resumptionDate: string | null },
   ) {
     const { term } = result;
-    const { signedDate, vacationDate, resumptionDate } = term;
+    const { signedDate, vacationDate } = term;
+    const { signatureUrl, resumptionDate } = extras;
     const hasDetails =
       signatureUrl || signedDate || vacationDate || resumptionDate;
     return {
@@ -345,6 +346,20 @@ export class ResultsService {
           ? { signatureUrl, signedDate, vacationDate, resumptionDate }
           : null,
       },
+    };
+  }
+
+  // Signature from the admin's Profile; resumption falls back to the next term's start.
+  private async sheetExtras(term: Term) {
+    const nextTerm = term.resumptionDate
+      ? null
+      : await this.resultRepository.manager.findOne(Term, {
+          where: { startDate: MoreThan(term.startDate) },
+          order: { startDate: 'ASC' },
+        });
+    return {
+      signatureUrl: await this.schoolSignature(),
+      resumptionDate: term.resumptionDate ?? nextTerm?.startDate ?? null,
     };
   }
 

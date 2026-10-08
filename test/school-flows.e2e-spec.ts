@@ -320,6 +320,10 @@ describe('School flows (e2e)', () => {
         .get(`/api/results/my-result?termId=${fx.termId}`)
         .set('Authorization', student);
       expect(res.body.data.student.class).toMatch(/JSS ?1/);
+      // No resumption date was typed, so the next term's start date is used.
+      expect(res.body.data.result.term.reportDetails.resumptionDate).toBe(
+        '2027-09-13',
+      );
     });
 
     it('does not roll over twice', async () => {
