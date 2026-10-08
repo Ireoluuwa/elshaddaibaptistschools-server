@@ -111,6 +111,67 @@ describe('School flows (e2e)', () => {
     });
   });
 
+  describe('results release', () => {
+    let student: string;
+    const myResult = () =>
+      api()
+        .get(`/api/results/my-result?termId=${fx.termId}`)
+        .set('Authorization', student);
+
+    beforeAll(async () => {
+      student = await login(app, 'jss1a');
+    });
+
+    it('hides a published result until the admin releases it', async () => {
+      const res = await myResult();
+      expect(res.body.data.notReleased).toBe(true);
+      expect(res.body.data.result).toBeNull();
+      expect(JSON.stringify(res.body)).not.toContain('Mathematics');
+    });
+
+    it('shows it once released, and hides it again on request', async () => {
+      await api()
+        .post(`/api/academics/terms/${fx.termId}/release-results`)
+        .set('Authorization', admin)
+        .expect(200);
+      let res = await myResult();
+      expect(res.body.data.notReleased).toBe(false);
+      expect(res.body.data.result.scores[0].subjectName).toBe('Mathematics');
+
+      await api()
+        .post(`/api/academics/terms/${fx.termId}/hide-results`)
+        .set('Authorization', admin)
+        .expect(200);
+      res = await myResult();
+      expect(res.body.data.result).toBeNull();
+    });
+
+    it('can be released after the term is closed', async () => {
+      await api()
+        .post(`/api/academics/terms/${fx.termId}/close`)
+        .set('Authorization', admin)
+        .expect(200);
+      await api()
+        .post(`/api/academics/terms/${fx.termId}/release-results`)
+        .set('Authorization', admin)
+        .expect(200);
+      const res = await myResult();
+      expect(res.body.data.result.scores[0].subjectName).toBe('Mathematics');
+
+      await api()
+        .post(`/api/academics/terms/${fx.termId}/activate`)
+        .set('Authorization', admin)
+        .expect(200);
+    });
+
+    it('only lets the admin release results', async () => {
+      await api()
+        .post(`/api/academics/terms/${fx.termId}/release-results`)
+        .set('Authorization', teacher)
+        .expect(403);
+    });
+  });
+
   describe('fee hold', () => {
     let student: string;
 
