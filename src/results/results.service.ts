@@ -7,6 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TerminalResult } from './entities/terminal-result.entity';
+import { Term } from '../academics/entities/term.entity';
 import { Student } from '../profile/entities/models/student.entity';
 import { Teacher } from '../profile/entities/models/teacher.entity';
 import { AcademicsService } from '../academics/academics.service';
@@ -142,6 +143,7 @@ export class ResultsService {
               placement.schoolClass?.id ?? null,
             ),
             placement,
+            await this.termScores(studentId, result.term, false),
           )
         : null,
     };
@@ -201,7 +203,12 @@ export class ResultsService {
       },
       result:
         result && !feesHold
-          ? this.forReportSheet(result, fees, placement)
+          ? this.forReportSheet(
+              result,
+              fees,
+              placement,
+              await this.termScores(student.id, result.term, true),
+            )
           : null,
       feesHold,
       notReleased: !released,
@@ -316,6 +323,7 @@ export class ResultsService {
     result: TerminalResult,
     fees: { outstanding: number; nextTermTuition: number; ict: number },
     placement: Placement,
+    termScores: { term: string; score: number | null }[],
   ) {
     const { term } = result;
     const { signatureUrl, signedDate, vacationDate, resumptionDate } = term;
@@ -325,6 +333,7 @@ export class ResultsService {
       ...result,
       fees,
       promotion: this.promotionFor(term.name, placement),
+      termScores,
       term: {
         id: term.id,
         name: term.name,
@@ -334,6 +343,38 @@ export class ResultsService {
           : null,
       },
     };
+  }
+
+  // Overall score for each term of the session, up to the one on the sheet.
+  // Students only see terms whose results have been released.
+  private async termScores(
+    studentId: string,
+    term: Term,
+    releasedOnly: boolean,
+  ) {
+    const results = await this.resultRepository.find({
+      where: {
+        student: { id: studentId },
+        status: ResultStatus.PUBLISHED,
+        term: { academicYear: { id: term.academicYear.id } },
+      },
+      relations: ['term'],
+    });
+    const scoreFor = (name: string) => {
+      const r = results.find((x) => x.term.name === name);
+      if (!r || !r.scores.length || r.term.startDate > term.startDate)
+        return null;
+      if (releasedOnly && !r.term.resultsReleasedAt) return null;
+      const obtained = r.scores.reduce(
+        (sum, s) => sum + s.test1 + s.test2 + s.exam,
+        0,
+      );
+      return Math.round((obtained / (r.scores.length * 100)) * 1000) / 10;
+    };
+    return ['1st Term', '2nd Term', '3rd Term'].map((name) => ({
+      term: name,
+      score: scoreFor(name),
+    }));
   }
 
   // Printed on the 3rd Term report sheet once the admin has decided.
