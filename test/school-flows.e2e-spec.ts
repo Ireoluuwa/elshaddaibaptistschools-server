@@ -207,6 +207,12 @@ describe('School flows (e2e)', () => {
       expect(res.body.data.feesHold).toBeNull();
       expect(res.body.data.result.scores[0].subjectName).toBe('Mathematics');
       expect(res.body.data.result.vpRemark).toBe('Good work');
+      // Maths 10 + 11 + 50 out of 100; later terms have no result yet.
+      expect(res.body.data.result.termScores).toEqual([
+        { term: '1st Term', score: 71 },
+        { term: '2nd Term', score: null },
+        { term: '3rd Term', score: null },
+      ]);
     });
 
     it('does not let students set their own fees', async () => {
